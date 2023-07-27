@@ -302,8 +302,6 @@ export class PendingDetailsComponent implements OnInit {
       var cboxRolesinput = $('.childCheck');
       var arrNumber: any = [];
       $.each(cboxRolesinput, function (idx, elem) {
-        var inputValues: any = $(elem).val();
-        //console.log(inputValues);
         arrNumber.push($(this).val());
       });
 
