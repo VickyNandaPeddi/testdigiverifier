@@ -279,7 +279,7 @@ public class ReportServiceImpl implements ReportService {
                 query.append("ON t1.orgid=t2.orgid  \n");
 
 
-                Query squery = entityManager.createNativeQuery(query.toString());
+                Query squery = entityManager.createNativeQuery(String.valueOf(query));
                 squery.setParameter(1, startDate);
                 squery.setParameter(2, endDate);
                 squery.setParameter(3, reportSearchDto.getOrganizationIds());
@@ -334,9 +334,7 @@ public class ReportServiceImpl implements ReportService {
                 query.append("WHERE organization.is_active =TRUE \n");
                 query.append("GROUP BY sm.organization_id ORDER BY organization.organization_name ASC) t2\n");
                 query.append("ON t1.orgid=t2.orgid  \n");
-
-
-                Query squery = entityManager.createNativeQuery(query.toString());
+                Query squery = entityManager.createNativeQuery(String.valueOf(query));
                 squery.setParameter(1, startDate);
                 squery.setParameter(2, endDate);
                 resultList = squery.getResultList();
@@ -412,7 +410,7 @@ public class ReportServiceImpl implements ReportService {
                 if (reportSearchDto.getAgentIds() != null && reportSearchDto.getAgentIds().size() > 0 && reportSearchDto.getAgentIds().get(0) != 0l) {
                     query.append("where userMaster.orgainzation_id in (?3) and userMaster.is_user_active = true and roleMaster.role_code ='ROLE_AGENTHR' and userMaster.user_id in (?4) ");
                     query.append("group by userMaster.user_id order by userMaster.user_first_name ASC; ");
-                    Query squery = entityManager.createNativeQuery(query.toString());
+                    Query squery = entityManager.createNativeQuery(String.valueOf(query));
                     squery.setParameter(1, startDate);
                     squery.setParameter(2, endDate);
                     squery.setParameter(3, reportSearchDto.getOrganizationIds());
@@ -421,7 +419,7 @@ public class ReportServiceImpl implements ReportService {
                 } else {
                     query.append("where userMaster.orgainzation_id in (?3) and userMaster.is_user_active = true and roleMaster.role_code ='ROLE_AGENTHR' ");
                     query.append("group by userMaster.user_id order by userMaster.user_first_name ASC; ");
-                    Query squery = entityManager.createNativeQuery(query.toString());
+                    Query squery = entityManager.createNativeQuery(String.valueOf(query));
                     squery.setParameter(1, startDate);
                     squery.setParameter(2, endDate);
                     squery.setParameter(3, reportSearchDto.getOrganizationIds());
@@ -536,7 +534,7 @@ public class ReportServiceImpl implements ReportService {
                     if (reportSearchDto.getAgentIds() != null && !reportSearchDto.getAgentIds().isEmpty()) {
                         query.append("and um.user_id in (?5)  ");
                     }
-                    squery = entityManager.createNativeQuery(query.toString());
+                    squery = entityManager.createNativeQuery(String.valueOf(query));
                     squery.setParameter(1, startDate);
                     squery.setParameter(2, endDate);
                     squery.setParameter(3, reportSearchDto.getOrganizationIds());
@@ -1111,9 +1109,9 @@ public class ReportServiceImpl implements ReportService {
                 content.setContentCategory(ContentCategory.OTHERS);
                 content.setContentSubCategory(ContentSubCategory.PRE_APPROVAL);
                 // System.out.println(content+"*******************************************content");
-                if (reportType.name() == "PRE_OFFER") {
+                if (reportType.name().equalsIgnoreCase("PRE_OFFER")) {
                     content.setContentSubCategory(ContentSubCategory.PRE_APPROVAL);
-                } else if (reportType.name() == "FINAL") {
+                } else if (reportType.name().equalsIgnoreCase("FINAL")) {
                     content.setContentSubCategory(ContentSubCategory.FINAL);
                 }
                 content.setFileType(FileType.PDF);

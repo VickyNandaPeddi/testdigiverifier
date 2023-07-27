@@ -5,7 +5,7 @@
 export const environment = {
   //apiUrl: 'http://165.232.184.105:9090',
   apiUrl: 'http://localhost:3000',
-  // apiUrl: 'http://ec2-13-235-248-102.ap-south-1.compute.amazonaws.com:3000',
+  //apiUrl: 'http://ec2-13-235-248-102.ap-south-1.compute.amazonaws.com:3000',
   // apiUrl: 'http://ec2-35-154-251-102.ap-south-1.compute.amazonaws.com:3000',
   flaskurl: "http://ec2-3-7-78-21.ap-south-1.compute.amazonaws.com:8000",
   digiurl: "http://ec2-3-111-96-142.ap-south-1.compute.amazonaws.com:3000",

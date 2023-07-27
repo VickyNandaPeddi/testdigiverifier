@@ -187,7 +187,6 @@ export class ConventionalCReportApprovalComponent implements OnInit {
 
   submitAddcomment(formAddcomment: FormGroup) {
     console.log("================================ ***** formAddcomment", this.formAddcomment.value)
-    debugger
     if (this.formAddcomment.valid) {
       this.candidateService.AddCommentsReports(this.formAddcomment.value).subscribe((result: any) => {
         window.open(result.data, "_blank");
@@ -319,7 +318,6 @@ export class ConventionalCReportApprovalComponent implements OnInit {
 
 
   InterimReport() {
-    debugger
     // console.log(this.candidateCode, "-----------------------------------------------");
     // const navURL = 'admin/CV-Final-Approval/' + this.candidateCode;
     // this.navRouter.navigate([navURL]);

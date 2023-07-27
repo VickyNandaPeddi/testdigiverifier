@@ -215,7 +215,7 @@ public class SuperAdminDashboardServiceImpl implements SuperAdminDashboardServic
 				}
 				query.append("and tds.last_updated_on between :startDate and :endDate) pd\n");
 				
-				Query resultQuery = entityManager.createNativeQuery(query.toString());
+				Query resultQuery = entityManager.createNativeQuery(String.valueOf(query));
 				resultQuery.setParameter("startDate", startDate);
 				resultQuery.setParameter("endDate", endDate);
 				if(superAdminDashboardDto.getOrganizationId()!=0) {
@@ -280,7 +280,7 @@ public class SuperAdminDashboardServiceImpl implements SuperAdminDashboardServic
 				query.append("where org.is_active =true ");
 				query.append("and COALESCE(sm.last_updated_on ,sm.created_on ) between :startDate and :endDate ");
 				query.append("group by sm.organization_id,org.organization_name ");
-				Query result = entityManager.createNativeQuery(query.toString()); 
+				Query result = entityManager.createNativeQuery(String.valueOf(query));
 				if(superAdminDashboardDto.getSourceId()!=0) {
 					 
 					result.setParameter("sourceId", superAdminDashboardDto.getSourceId());
@@ -336,7 +336,7 @@ public class SuperAdminDashboardServiceImpl implements SuperAdminDashboardServic
 				query.append("where org.is_active =true ");
 				query.append("and COALESCE(sm.last_updated_on ,sm.created_on ) between :startDate and :endDate ");
 				query.append("group by sm.organization_id,org.organization_name ");
-				Query result = entityManager.createNativeQuery(query.toString()); 
+				Query result = entityManager.createNativeQuery(String.valueOf(query));
 				if(superAdminDashboardDto.getSourceId()!=0) {
 					 
 					result.setParameter("sourceId", superAdminDashboardDto.getSourceId());

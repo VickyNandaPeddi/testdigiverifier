@@ -266,53 +266,9 @@ export class ConventionalVendorcheckDashboardComponent implements OnInit {
 
   }
 
-  uploadGlobalCaseDetails(event: any) {
-    const fileType = event.target.files[0].name.split('.').pop();
-    const file = event.target.files[0];
-    if (fileType == 'pdf' || fileType == 'PDF' || fileType == 'png' || fileType == 'PNG' || fileType == 'jpg' || fileType == 'JPG') {
-      this.proofDocumentNew = file;
-      this.empexirdocument = file;
-    } else {
-      event.target.value = null;
-      Swal.fire({
-        title: 'Please select .jpeg, .jpg, .png file type only.',
-        icon: 'warning'
-      });
-    }
-  }
 
   tmp: any = [];
 
-  roleCboxes(e: any) {
-    var sid = e.target.id;
-    console.log("checked======================", sid)
-    if (e.target.checked) {
-      // console.log("value************",value)
-      this.tmp.push(sid);
-    } else {
-      this.tmp.splice($.inArray(sid, this.tmp), 1);
-    }
-    console.log("checked==============================", this.tmp)
-  }
-
-  selectAll(e: any) {
-    if (e.target.checked) {
-      $(e.target).parent().siblings().find(".billServiceId").prop('checked', true);
-      var iteminput = $('.item input');
-      var arrNumber: any = [];
-      $.each(iteminput, function (idx, elem) {
-        var inputValues: any = $(elem).val();
-        console.log(inputValues);
-        arrNumber.push($(this).val());
-      });
-
-      this.tmp = arrNumber;
-      console.log(this.tmp);
-    } else {
-      $(e.target).parent().siblings().find(".billServiceId").prop('checked', false);
-    }
-
-  }
 
   getvendorid(id: any) {
     this.vendorid = id.slice(-2)
@@ -587,9 +543,7 @@ export class ConventionalVendorcheckDashboardComponent implements OnInit {
     this.licheckVendor.sourceName = this.sourceName
     this.licheckVendor.documentName = this.documentUrl;
     this.licheckVendor.candidateID = this.changedCandidateId;
-    // @ts-ignore
     if (this.vendorCheckId != null) {
-      alert("not null")
     }
     this.customers.saveConventionalVendorCheckWithVendorData(this.licheckVendor).subscribe((data: any) => {
       console.log(data.data);
@@ -648,37 +602,6 @@ export class ConventionalVendorcheckDashboardComponent implements OnInit {
       return `with: ${reason}`;
     }
   }
-
-  billUpdate() {
-    console.log("______________inside button ------------------")
-    this.getBillValues.forEach((element: any) => {
-      element.ratePerItem = $(".billrpp" + element.source.sourceId).val();
-      element.tatPerItem = $(".billrpi" + element.source.sourceId).val();
-      element.serviceId = $(".billServiceId" + element.source.userId).val();
-
-    });
-    return this.customers.saveVendorChecks(this.getBillValues, this.userID).subscribe((result: any) => {
-      console.log(result, '--------------------return---------------');
-      if (result.outcome === true) {
-        Swal.fire({
-          title: result.message,
-          icon: 'success'
-        }).then((result) => {
-          if (result.isConfirmed) {
-            const navURL = 'admin/addvendor';
-            this.navRouter.navigate([navURL]);
-          }
-        });
-      } else {
-        Swal.fire({
-          title: result.message,
-          icon: 'warning'
-        })
-      }
-    });
-  }
-
-  // added
 
   linkAdminApproval(candidateCode: any) {
     console.log(candidateCode, '-----------------------------------------------');

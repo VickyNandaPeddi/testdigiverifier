@@ -281,14 +281,7 @@ calculateTotalGapsAndTenure(){
   $.each(tenures,function(idx,elem){
 
   });
-  $.each(gaps,function(idx,elem){
-    if($(elem).val()!="Not-Available"){
-      let value:any = $(elem).val();
-      console.log("value"+value);
-      gap = gap + parseInt(value.toString());
-      console.log("gaps"+gap);
-    }
-  });
+
 
   console.log("tgaps"+gap);
 }

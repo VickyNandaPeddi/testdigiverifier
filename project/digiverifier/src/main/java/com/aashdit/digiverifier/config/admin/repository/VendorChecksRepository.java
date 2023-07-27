@@ -44,7 +44,7 @@ public interface VendorChecksRepository extends JpaRepository<VendorChecks, Long
     @Query("select vc from VendorChecks  vc,VendorUploadChecks  vuc where vc.vendorcheckId in vuc.vendorChecks.vendorcheckId")
     List<VendorChecks> findAllVendorCheckInVenodorUploadChecks();
 
-    @Query(value = "SELECT V.vendor_id as vendorId , C.candidate_id as candidateId, (GROUP_CONCAT(distinct S.source_id)) AS sourceId FROM t_dgv_vendor_checks V  JOIN t_dgv_vendor_checks C ON C.vendor_id = V.vendor_id     JOIN t_dgv_vendor_checks S ON S.vendor_id = V.vendor_id AND S.candidate_id = C.candidate_id GROUP BY V.vendor_id, C.candidate_id", nativeQuery = true)
+    @Query(value = "SELECT V.vendor_id as vendorId , C.candidate_id as candidateId, (GROUP_CONCAT(distinct S.source_id)) AS sourceId FROM t_dgv_vendor_checks V  JOIN t_dgv_vendor_checks C ON C.vendor_id = V.vendor_id     JOIN t_dgv_vendor_checks S ON S.vendor_id = V.vendor_id AND S.candidate_id = C.candidate_id GROUP BY V.vendor_id, C.candidate_id limit 10", nativeQuery = true)
     List<ReportUtilizationVendorDto> findAllVendorCandidateAndSourceId();
 
     @Query(value = "select vc.* from t_dgv_vendor_checks vc where   vc.vendor_id = ?1  and vc.candidate_id = ?2 and vc.source_id = ?3", nativeQuery = true)

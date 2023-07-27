@@ -53,7 +53,7 @@ public class liCheckToPerformController {
     @ApiOperation(value = "performs vendorcheck and save the data")
     @PostMapping(value = "/udpdateBgvCheckStatusRowwise", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
     public ServiceOutcome<String> udpdateBgvCheckStatusRowwise(@RequestParam String vendorchecks, @RequestParam(value = "file", required = false) MultipartFile proofDocumentNew) {
-        String data = liCheckToPerformService.UpdateBGVCheckStatusRowwise(vendorchecks, proofDocumentNew,"4");
+        String data = liCheckToPerformService.UpdateBGVCheckStatusRowwise(vendorchecks, proofDocumentNew, "4");
         ServiceOutcome<String> response = new ServiceOutcome<>();
         response.setData(data);
         response.setData(response.getData());

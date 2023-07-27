@@ -28,16 +28,4 @@ public class AWSConfig {
                 .build();
 
     }
-//testnanda
-//    @Bean
-//    public AmazonS3 s3() {
-//        AWSCredentials awsCredentials =
-//                new BasicAWSCredentials("AKIAVSVRUAJRLIC7BK55", "KH1EJ5kJNv3jQauHCcey3fS/Cy1ZcHfwadqDC6nE");
-//        return AmazonS3ClientBuilder
-//                .standard()
-//                .withRegion("us-east-2")
-//                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
-//                .build();
-//
-//    }
 }

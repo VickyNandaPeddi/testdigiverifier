@@ -65,6 +65,7 @@ public interface liCheckToPerformService {
     public ServiceOutcome<ConventionalVendorCandidatesSubmitted> findConventionalCandidateByCandidateId(Long candiateId);
 
     public ServiceOutcome<List<ReportUtilizationDto>> generateJsonResponse3() throws Exception;
+    public ServiceOutcome<List<ReportUtilizationDto>> generateJsonResponse() throws Exception;
 
     public ServiceOutcome<List<VendorReferenceDataDto>> generateReferenceDataToVendor(Long candidateId, Long checkName) throws Exception;
 
