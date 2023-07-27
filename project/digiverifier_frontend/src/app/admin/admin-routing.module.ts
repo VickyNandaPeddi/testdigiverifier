@@ -19,11 +19,18 @@ import {VendorMgmtComponent} from './vendor-mgmt/vendor-mgmt.component';
 import {AddVendorComponent} from './add-vendor/add-vendor.component';
 import {VendorDashboardComponent} from './vendor-dashboard/vendor-dashboard.component';
 import {UploadVendocheckComponent} from './upload-vendocheck/upload-vendocheck.component';
-import {ConventionalVendorcheckDashboardComponent} from './conventional-vendorcheck-dashboard/conventional-vendorcheck-dashboard.component';
+
+import {
+  ConventionalVendorcheckDashboardComponent
+} from './conventional-vendorcheck-dashboard/conventional-vendorcheck-dashboard.component';
 import {BGVVerificationTypeComponent} from './bgv-verification-type/bgv-verification-type.component';
-import {CandidatesubmittedConventionalComponent} from "./candidatesubmitted-conventional/candidatesubmitted-conventional.component";
+import {
+  CandidatesubmittedConventionalComponent
+} from "./candidatesubmitted-conventional/candidatesubmitted-conventional.component";
 import {VendorCApprovalComponent} from './vendor-c-approval/vendor-c-approval.component';
-import { ConventionalCReportApprovalComponent } from './conventional-c-report-approval/conventional-creport-approval/conventional-creport-approval.component';
+import {
+  ConventionalCReportApprovalComponent
+} from './conventional-c-report-approval/conventional-creport-approval/conventional-creport-approval.component';
 
 const routes: Routes = [
   {
@@ -138,6 +145,7 @@ const routes: Routes = [
         canActivate: [AdminGuard],
         data: {roles: ['ROLE_ADMIN']}
       },
+
       {
         path: 'Dashboard',
         component: CandidatesubmittedConventionalComponent,
