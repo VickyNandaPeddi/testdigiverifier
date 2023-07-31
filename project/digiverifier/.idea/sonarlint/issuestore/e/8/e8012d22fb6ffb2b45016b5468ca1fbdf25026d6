@@ -1,0 +1,89 @@
+
+c	java:S112ü"FDefine and throw a dedicated exception instead of using a generic one.(£ëò¢8“äªá˜1
+w
+java:S2293Ì"YReplace the type specification in this constructor call with the diamond operator ("<>").(á°÷Ò8—äªá˜1
+|
+java:S2293Ñ"YReplace the type specification in this constructor call with the diamond operator ("<>").(¶´€óüÿÿÿÿ8—äªá˜1
+k
+java:S1192­	"HDefine a constant instead of duplicating this literal " months" 3 times.(ˆ½”Šüÿÿÿÿ8›äªá˜1
+¿
+java:S1192ï" Define a constant instead of duplicating this literal "COUNT( DISTINCT CASE WHEN (statusMaster.status_code ='FINALREPORT') AND candidatestatushistory.candidate_status_change_timestamp BETWEEN ?1 AND ?2 THEN candidatestatushistory.candidate_id END) AS finalreportDeliveredcount,
+" 3 times.(™Îé¶8›äªá˜1
+ƒ
+java:S1192"eDefine a constant instead of duplicating this literal "WHERE organization.is_active =TRUE 
+" 4 times.(ÔÚ¶‡8›äªá˜1
+p
+java:S1192õ"MDefine a constant instead of duplicating this literal "ROLE_AGENTHR" 5 times.(•ìáÁıÿÿÿÿ8œäªá˜1
+m
+java:S1192å"JDefine a constant instead of duplicating this literal " 00:00:00" 3 times.( É¾ûÿÿÿÿ8œäªá˜1
+ß
+java:S1192í"ÀDefine a constant instead of duplicating this literal "COUNT( DISTINCT CASE WHEN (statusMaster.status_code ='NEWUPLOAD' OR statusMaster.status_code ='INVALIDUPLOAD') AND candidatestatushistory.candidate_status_change_timestamp BETWEEN ?1 AND ?2 THEN candidatestatushistory.candidate_id END) AS newuploadcount,
+" 3 times.(¤ıšº8œäªá˜1
+Ô
+java:S1192ü"°Define a constant instead of duplicating this literal "LEFT JOIN t_dgv_candidate_basic candidatebasic ON candidatebasic.organization_id=organization.organization_id 
+" 4 times.(ÛÌÑ«ıÿÿÿÿ8œäªá˜1
+„
+java:S1192ú"aDefine a constant instead of duplicating this literal "FROM   t_dgv_service_master sm 
+" 4 times.(ùÖÏÿÿÿÿÿ8œäªá˜1
+³
+java:S1192€"”Define a constant instead of duplicating this literal "LEFT JOIN t_dgv_role_master roleMaster ON roleMaster.role_id =userMaster.role_id  
+" 4 times.(ï”8œäªá˜1
+x
+java:S1192ó"UDefine a constant instead of duplicating this literal "ROLE_AGENTSUPERVISOR" 5 times.(İ¡Í¥ûÿÿÿÿ8œäªá˜1
+Å
+java:S1192ğ"§Define a constant instead of duplicating this literal "COUNT( DISTINCT CASE WHEN (statusMaster.status_code ='PENDINGAPPROVAL') AND candidatestatushistory.candidate_status_change_timestamp BETWEEN ?1 AND ?2 THEN candidatestatushistory.candidate_id END) AS intereimreportDeliveredcount,
+" 3 times.(ò‘ÿH8œäªá˜1
+Ì
+java:S1192û"¨Define a constant instead of duplicating this literal "LEFT JOIN t_dgv_organization_master organization ON organization.organization_id = sm.organization_id 
+" 4 times.(’Çúûÿÿÿÿ8œäªá˜1
+µ
+java:S1192î"‘Define a constant instead of duplicating this literal "COUNT( DISTINCT CASE WHEN (statusMaster.status_code ='REINVITE') AND candidatestatushistory.candidate_status_change_timestamp BETWEEN ?1 AND ?2 THEN candidatestatushistory.candidate_id END) AS reinvitecount,
+" 3 times.(ÿ±„­ÿÿÿÿÿ8œäªá˜1
+h
+java:S1192æ"JDefine a constant instead of duplicating this literal " 23:59:59" 3 times.(ÏñÆ¼8äªá˜1
+l
+java:S1192­	"IDefine a constant instead of duplicating this literal " Years, " 3 times.(ˆ½”Šüÿÿÿÿ8äªá˜1
+È
+java:S1192ÿ"¤Define a constant instead of duplicating this literal "LEFT JOIN t_dgv_user_master userMaster ON userMaster.orgainzation_id=organization.organization_id 
+" 4 times.(ÔéÜİùÿÿÿÿ8äªá˜1
+k
+java:S1192×"MDefine a constant instead of duplicating this literal "ROLE_CBADMIN" 3 times.(¹öÌ…8äªá˜1
+½
+java:S1192ñ"Define a constant instead of duplicating this literal "COUNT( DISTINCT CASE WHEN (statusMaster.status_code ='PROCESSDECLINED') AND candidatestatushistory.candidate_status_change_timestamp BETWEEN ?1 AND ?2 THEN candidatestatushistory.candidate_id END) AS processDeclinecount,
+" 3 times.(êŠû8äªá˜1
+U
+java:S3655ƒ	"7Call "Optional#isPresent()" before accessing the value.(…–ëÓ8·êªá˜1
+Z
+java:S3655„	"7Call "Optional#isPresent()" before accessing the value.(Œ­Ô¸şÿÿÿÿ8·êªá˜1
+w	java:S115¦"ZRename this constant name to match the regular expression '^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$'.(¶Ûßã8¼êªá˜1
+p
+java:S3776Ë"RRefactor this method to reduce its Cognitive Complexity from 31 to the 15 allowed.(®ß–É8êêªá˜1
+Y	java:S125µ"<This block of commented-out lines of code should be removed.(ìãÈÃ8ñêªá˜1
+^	java:S125Ç"<This block of commented-out lines of code should be removed.(éØ»Úûÿÿÿÿ8ñêªá˜1
+\
+java:S1155è">Use isEmpty() to check whether the collection is empty or not.(²¹³8‡ëªá˜1
+W
+java:S1612ñ"9Replace this lambda with method reference 'File::delete'.(™Æ¯í8Ğíªá˜1
+l
+java:S4042ñ"NUse "java.nio.file.Files#delete" here for better messages on error conditions.(™Æ¯í8Ñíªá˜1
+]	java:S899ò";Do something with the "boolean" value returned by "delete".(ôÄíÿÿÿÿÿ8Ñíªá˜1
+q
+java:S4042ò"NUse "java.nio.file.Files#delete" here for better messages on error conditions.(ôÄíÿÿÿÿÿ8Ñíªá˜1
+]	java:S899ó";Do something with the "boolean" value returned by "delete".(§çÓóøÿÿÿÿ8Ñíªá˜1
+q
+java:S4042ó"NUse "java.nio.file.Files#delete" here for better messages on error conditions.(§çÓóøÿÿÿÿ8Ñíªá˜1
+[	java:S106û"9Replace this use of System.out or System.err by a logger.(È½ë€ıÿÿÿÿ8Òíªá˜1
+a
+java:S1155‚	">Use isEmpty() to check whether the collection is empty or not.(Ô°âúÿÿÿÿ8Ôíªá˜1
+[	java:S106”	"9Replace this use of System.out or System.err by a logger.(Œó­¸ûÿÿÿÿ8Úíªá˜1
+[	java:S106—	"9Replace this use of System.out or System.err by a logger.(šöôüÿÿÿÿ8Üíªá˜1
+[	java:S106™	"9Replace this use of System.out or System.err by a logger.(¸¨µÙşÿÿÿÿ8Üíªá˜1
+V	java:S106œ	"9Replace this use of System.out or System.err by a logger.(€†ÑÔ8İíªá˜1
+[	java:S106Ÿ	"9Replace this use of System.out or System.err by a logger.(²‚§ÿÿÿÿÿ8İíªá˜1
+X	java:S125Å	"<This block of commented-out lines of code should be removed.(àú?8äíªá˜1
+Y
+java:S1172Ü	"6Remove this unused method parameter "toleranceConfig".(„¦Ùùùÿÿÿÿ8åíªá˜1
+^	java:S125ˆ
+"<This block of commented-out lines of code should be removed.(òÏ·²ûÿÿÿÿ8ííªá˜1
+å
+java:S6541Ë"ÆA "Brain Method" was detected. Refactor it to reduce at least one of the following metrics: LOC from 179 to 64, Complexity from 19 to 14, Nesting Level from 5 to 2, Number of Variables from 22 to 6.(®ß–É8ÿíªá˜1

@@ -61,6 +61,7 @@
             <div class="card">
               <div class="card-header">
                 <h4 class="card-title">Upload Details
+                  <!--                              <a routerLink="../candidateMgmt" class="btn btn-sm btn-warning" class="float-right">View Uploads</a>-->
                 </h4>
               </div>
               <div class="card-body" style="padding: 10px 5px;">
@@ -87,6 +88,15 @@
                   </div>
                 </div>
               </div>
+
+              <div class="card cardStat{{isShowDiv}}">
+                <div class="card-header">
+                  <h4 class="card-title">Pending Details
+                    <button (click)=toggleDisplayDiv() style="margin: -5px 0;"
+                            class="btn btn-sm btn-warning float-right">View Report Delivery Details
+                    </button>
+                  </h4>
+                </div>
                 <div class="card-body" style="padding: 10px 5px;">
                   <div class="row">
                     <div class="col-md-12">
@@ -94,6 +104,7 @@
                     </div>
                   </div>
                 </div>
+              </div>
             </div>
           </div>
           <div class="col-md-12 containerStat{{containerStat}}">

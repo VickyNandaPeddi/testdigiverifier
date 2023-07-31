@@ -74,6 +74,7 @@ export class PendingDetailsComponent implements OnInit {
       }
       this.adminDashboard.getChartDetails(filterData).subscribe((data: any) => {
         this.CharPendingDetails = data.data.candidateDtoList;
+        alert(""+this.ChartPendingDetails)
         //console.log(this.CharPendingDetails);
       });
 

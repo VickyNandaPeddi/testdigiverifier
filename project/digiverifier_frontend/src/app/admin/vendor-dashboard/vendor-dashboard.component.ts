@@ -1,19 +1,7 @@
 import {Component, NgZone, OnInit} from '@angular/core';
 import {OrgadminService} from 'src/app/services/orgadmin.service';
-import {
-  ModalDismissReasons,
-  NgbModal,
-  NgbCalendar,
-  NgbDate,
-} from '@ng-bootstrap/ng-bootstrap';
-import {
-  FormGroup,
-  FormControl,
-  FormBuilder,
-  Validators,
-} from '@angular/forms';
-import {HttpEventType, HttpResponse} from '@angular/common/http';
-import {Observable} from 'rxjs';
+import {NgbCalendar, NgbDate, NgbModal,} from '@ng-bootstrap/ng-bootstrap';
+import {FormControl, FormGroup, Validators,} from '@angular/forms';
 import Swal from 'sweetalert2';
 import {AuthenticationService} from 'src/app/services/authentication.service';
 import {OrgadminDashboardService} from 'src/app/services/orgadmin-dashboard.service';
@@ -214,6 +202,9 @@ export class VendorDashboardComponent implements OnInit {
       this.candidateData = resp.data;
     });
 
+  }
+  toggleDisplayDiv() {
+    this.isShowDiv = !this.isShowDiv;
   }
 
   getuserId(userId: any) {
