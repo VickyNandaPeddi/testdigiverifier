@@ -5,7 +5,7 @@ import com.aashdit.digiverifier.common.enums.ContentSubCategory;
 import com.aashdit.digiverifier.common.enums.ContentType;
 import com.aashdit.digiverifier.common.enums.FileType;
 import lombok.Data;
-//import org.hibernate.annotations.Type;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -40,7 +40,7 @@ public class Content {
 	@Enumerated(EnumType.STRING)
 	private ContentCategory contentCategory;
 
-//	@Type(type="org.hibernate.type.BinaryType")
+	@Type(type="org.hibernate.type.BinaryType")
     @Column(name = "document", columnDefinition="LONGBLOB")
     private byte[] Document;
 	
