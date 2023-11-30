@@ -6,8 +6,10 @@ import com.aashdit.digiverifier.vendorcheck.model.ConventionalVendorCandidatesSu
 import org.json.JSONObject;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -32,4 +34,28 @@ public interface ConventionalCandidatesSubmittedRepository extends JpaRepository
     Boolean existsByRequestId(String requestID);
 
     ConventionalVendorCandidatesSubmitted findByRequestId(String requestID);
+
+    @Query(value = "SELECT * FROM t_dgv_conventional_candidate_request " +
+            "WHERE  (candidate_id  LIKE %:userSearchInput% " +
+            "OR status  LIKE %:userSearchInput% " +
+            "OR request_type  LIKE %:userSearchInput% " +
+            "OR request_id  LIKE %:userSearchInput% " +
+            "OR ps_no  LIKE %:userSearchInput% " +
+            "OR applicant_id  LIKE %:userSearchInput% " +
+            "OR name LIKE %:userSearchInput%) " +
+            "AND created_on BETWEEN :startDate AND :endDate", nativeQuery = true)
+    List<ConventionalVendorCandidatesSubmitted> searchAllCandidate(
+            @Param("userSearchInput") String userSearchInput,
+            @Param("startDate") Date startDate,
+            @Param("endDate") Date endDate);
+
+
+
+    @Query(value = "SELECT * FROM t_dgv_conventional_candidate_request " +
+            "WHERE status  LIKE :userSearchInput " +
+            "AND created_on BETWEEN :startDate AND :endDate", nativeQuery = true)
+    List<ConventionalVendorCandidatesSubmitted> searchAllCandidateStatus(
+            @Param("userSearchInput") String userSearchInput,
+            @Param("startDate") Date startDate,
+            @Param("endDate") Date endDate);
 }

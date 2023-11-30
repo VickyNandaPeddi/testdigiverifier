@@ -117,4 +117,8 @@ public class VendorChecks implements Serializable {
     @Column(name = "pathkey")
     private String pathKey;
 
+
+    @Column(name = "licheckid")
+    private Long licheckId;
+
 }

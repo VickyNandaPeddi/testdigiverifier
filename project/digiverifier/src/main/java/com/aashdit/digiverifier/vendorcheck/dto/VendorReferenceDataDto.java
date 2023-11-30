@@ -13,17 +13,15 @@ import java.util.List;
 @Setter
 public class VendorReferenceDataDto<T> {
 
-    private Long candidateId;
+    private String candidateId;
     private String CheckName;
-//    private ConventionalCandidateReferenceInfo conventionalCandidateReferenceInfo;
-//    private ConventionalCandidateCafEducation conventionalCandidateCafEducation;
-//    private ConventionalCafAddress conventionalCafAddress;
-//    private ConventionalCandidateExperience conventionalCandidateExperience;
-
+    private String dateOfBirth;
+    private String fatherName;
+    private String gender;
+    private String emailId;
+    private String contactNumber;
     private List<T> vendorReferenceData;
-//    private List<ConventionalCandidateCafEducation> conventionalCandidateCafEducations;
-//    private List<ConventionalCafAddress> conventionalCafAddresses;
-//    private List<ConventionalCandidateExperience> conventionalCandidateExperiences;
+
 
 
 }

@@ -13,8 +13,8 @@ import java.util.List;
 @Repository
 public interface ConventionalVendorCandidatesSubmittedRepository extends JpaRepository<ConventionalVendorCandidatesSubmitted, Long> {
 
-    @Query("FROM ConventionalVendorCandidatesSubmitted WHERE createdBy.userId =:userId AND createdOn between :startDate and :endDate")
-    List<ConventionalVendorCandidatesSubmitted> findAllByUserIdAndDateRange(@Param("userId") Long userId, @Param("startDate") Date startDate, @Param("endDate") Date endDate);
+    @Query("FROM ConventionalVendorCandidatesSubmitted WHERE createdOn between :startDate and :endDate")
+    List<ConventionalVendorCandidatesSubmitted> findAllByUserIdAndDateRange( @Param("startDate") Date startDate, @Param("endDate") Date endDate);
 
 
 }

@@ -10,7 +10,7 @@ import java.util.Date;
 @Setter
 public class ConventionalEducationDto {
 
-    private Long Id;
+//    private Long Id;
 
     private Long conventionalCandidateId;
 

@@ -12,7 +12,7 @@ import java.util.Date;
 @Setter
 public class ConventionalAddressDto {
 
-    private Long Id;
+//    private Long Id;
 
     private String addressType;
 
@@ -23,7 +23,7 @@ public class ConventionalAddressDto {
 
     private String houseType;
 
-    private String contactInfo;
+//    private String contactInfo;
 
     private String insufficiencyRemarks;
 

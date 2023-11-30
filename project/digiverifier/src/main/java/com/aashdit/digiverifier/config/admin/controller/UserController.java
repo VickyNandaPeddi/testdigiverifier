@@ -228,4 +228,11 @@ public class UserController {
 //    }
 
 
+    @GetMapping("/searchAllVendorData")
+    public ResponseEntity<ServiceOutcome<List<VendorChecksDto>>> searchVendorData(@RequestParam("searchText") String searchText) {
+        ServiceOutcome<List<VendorChecksDto>> listServiceOutcome = userService.searchAllVendorData(searchText);
+        return new ResponseEntity<ServiceOutcome<List<VendorChecksDto>>>(listServiceOutcome, HttpStatus.OK);
+    }
+
+
 }

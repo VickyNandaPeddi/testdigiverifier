@@ -1,5 +1,5 @@
 import {EventEmitter, Injectable} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import {HttpClient,HttpHeaders} from '@angular/common/http';
 import {environment} from 'src/environments/environment';
 import {data} from 'jquery';
 import {BehaviorSubject} from "rxjs";
@@ -23,8 +23,8 @@ export class CustomerService {
     return this.sharedData;
   }
 
-  getVendorReportAttributes(vendorCheckID: any) {
-    return this.http.get(`${environment.apiUrl}/api/vendorCheck/getConventionalAttributesMaster/${vendorCheckID}`);
+  getVendorReportAttributes(vendorCheckID: any,type:any) {
+    return this.http.get(`${environment.apiUrl}/api/vendorCheck/getConventionalAttributesMaster/${vendorCheckID}/${type}`);
   }
 
   addAndUpdateLicheckByCandidateID({candidateId}: any) {
@@ -43,7 +43,13 @@ export class CustomerService {
   addAndUpdateCandidateData(VendorID: any) {
     return this.http.post(`${environment.apiUrl}/api/vendorCheck/saveSubmittedCandidates`, VendorID);
   }
+  saveSubmittedCandidatesForTriggerCheckStatus(VendorID: any,triggerRequestId:any) {
+    return this.http.post(`${environment.apiUrl}/api/vendorCheck/saveSubmittedCandidatesForTriggerCheckStatus/${triggerRequestId}`, VendorID);
+  }
 
+  reAssignToAnotherVendor(checkUniqueId: any,vendorId:any) {
+    return this.http.get(`${environment.apiUrl}/api/vendorCheck/reassignVendor/${checkUniqueId}/${vendorId}`);
+  }
   updateCandidateStatusBasedOnLiCheckStatus() {
     return this.http.get(`${environment.apiUrl}/api/vendorCheck/updateCandidateStatus`);
   }
@@ -195,22 +201,29 @@ export class CustomerService {
     return this.http.get(`${environment.apiUrl}/api/candidate/conventionalCandidateId/${candidateId}`);
   }
 
-  getDocumentNameAndUrl(candidateId: any) {
-    return this.http.get(`${environment.apiUrl}/api/vendorCheck/findPrecisedUrl/${candidateId}`);
+  getDocumentNameAndUrl(candidateId: any,checkName:any) {
+    return this.http.get(`${environment.apiUrl}/api/vendorCheck/findPrecisedUrl/${candidateId}/${checkName}`);
   }
 
   saveConventionalVendorCheckWithVendorData(data: any) {
     return this.http.post(`${environment.apiUrl}/api/vendorCheck/liCheck`, data);
   }
-
-  updateBgvCheckStatusRowWise(candidateId: any) {
-    return this.http.post(`${environment.apiUrl}/api/vendorCheck/udpdateBgvCheckStatusRowwise`, data);
+  updateBgvCheckStatusRowWise(data: any) {
+    return this.http.post(`${environment.apiUrl}/api/vendorCheck/updateBgvCheckStatusRowwise/`, data);
   }
 
   getAllLiChecks(requestId: any) {
     return this.http.get(`${environment.apiUrl}/api/vendorCheck/findAllLiChecks/${requestId}`);
   }
-
+  getAllStopLiChecks(requestId: any) {
+    return this.http.get(`${environment.apiUrl}/api/vendorCheck/findAllStopLiChecks/${requestId}`);
+  }
+  getAllNewUploadLiChecks(requestId: any) {
+    return this.http.get(`${environment.apiUrl}/api/vendorCheck/findAllNewUploadLiChecks/${requestId}`);
+  }
+  updateIdentityCheckStatus(checkUniqueId: any,enableStatus:any) {
+    return this.http.get(`${environment.apiUrl}/api/vendorCheck/updateIdentityCheckDisableStatus/${checkUniqueId}/${enableStatus}`);
+  }
   getAllLiChecksAll() {
     return this.http.get(`${environment.apiUrl}/api/vendorCheck/findAllLiChecks`);
   }
@@ -244,6 +257,29 @@ export class CustomerService {
   getallVendorCheckDetailsByDateRange(data: any) {
     return this.http.post(`${environment.apiUrl}/api/user/getVendorCheck`, data);
   }
+  getAllVendorSearch( userSearchInput: string) {
+    const queryParams = { searchText: userSearchInput };
+    return this.http.get(`${environment.apiUrl}/api/user/searchAllVendorData`,{ params: queryParams });
 
+  }
+
+  getAllSearchData( userSearchInput: string) {
+    const queryParams = { searchText: userSearchInput };
+    return this.http.get(`${environment.apiUrl}/api/vendorCheck/searchAllCandidate`,{ params: queryParams });
+
+  }
+
+
+  getRemarksByCheckUniqueId(checkUniqueId:any){
+    const queryParams = { checkUniqueId: checkUniqueId };
+    return this.http.get(`${environment.apiUrl}/api/vendorCheck/getCheckUniqueIdForRemarks`,{ params: queryParams });
+
+  }
+ getAllDocuementPrecisedUrls(requestID: any) {
+    return this.http.get(`${environment.apiUrl}/api/vendorCheck/downloadAllUploadDocuments/${requestID}`, {
+      responseType: 'arraybuffer',  // Specify the response type as arraybuffer
+      headers: new HttpHeaders({'Accept': 'application/zip'}) // Request the ZIP file
+    });
+  }
 
 }

@@ -20,4 +20,6 @@ public interface ConventionCafAddressRepository extends JpaRepository<Convention
     void deleteAllByConventionalRequestId(Long conventionalRequestId);
 
     List<ConventionalCafAddress> findByConventionalCandidateId(Long conventionalCandidateId);
+
+    List<ConventionalCafAddress> findByConventionalRequestId(Long conventionalRequestId);
 }

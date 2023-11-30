@@ -2,6 +2,7 @@ import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {CustomerService} from '../../services/customer.service';
 import {LoaderService} from "../../services/loader.service";
+import Swal from "sweetalert2";
 
 @Component({
   selector: 'app-bgv-verification-type',
@@ -47,12 +48,29 @@ export class BGVVerificationTypeComponent implements OnInit {
 
       this.loaderService.show();
       this.customer.addAndUpdateCandidateData(vendorData).subscribe((data: any) => {
-        console.log(data);
+        // if (data.status !== null) {
+        //   alert(data.status);
+        // }
+        if (data.outcome === false) {
+          // const errorJsonStartIndex = errorMessage.indexOf('[');
+          // const errorJson = errorMessage.substring(errorJsonStartIndex);
+          // const errorObject = JSON.parse(errorJson);
+          //
+          // const errorMessageFromObject = errorObject[0].Message;
+          Swal.fire({
+
+            title: data.message,
+            icon: 'warning'
+          }).then((result) => {
+            if (result.isConfirmed) {
+            }
+          });
+        }
         if (data.toString() != null) {
           resolve();
         }
       });
+
     });
   }
-
 }

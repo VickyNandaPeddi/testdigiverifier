@@ -4,9 +4,7 @@ import com.aashdit.digiverifier.config.admin.model.User;
 import com.aashdit.digiverifier.config.candidate.model.Candidate;
 import com.aashdit.digiverifier.config.superadmin.model.Source;
 import com.aashdit.digiverifier.config.superadmin.model.VendorCheckStatusMaster;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
@@ -15,6 +13,8 @@ import java.util.Date;
 @Getter
 @Setter
 @ToString
+@NoArgsConstructor
+@AllArgsConstructor
 public class VendorChecksDto {
     private Long vendorcheckId;
 
@@ -62,4 +62,12 @@ public class VendorChecksDto {
     private String pathKey;
 
     private String checkUniqueId;
+    private String modeOfVerificationPerformed;
+    private byte[] vendorUplodedDocument;
+    private String stopCheckStatus;
+
+    private String fastTrackDateTime;
+
+    private String disableStatus;
+
 }

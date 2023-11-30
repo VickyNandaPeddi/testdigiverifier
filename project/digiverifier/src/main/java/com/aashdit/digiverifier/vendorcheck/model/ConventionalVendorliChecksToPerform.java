@@ -3,7 +3,6 @@
  */
 package com.aashdit.digiverifier.vendorcheck.model;
 
-import java.time.LocalDateTime;
 import java.util.Date;
 
 import javax.persistence.*;
@@ -12,7 +11,6 @@ import com.aashdit.digiverifier.config.admin.model.User;
 import com.aashdit.digiverifier.config.admin.model.VendorChecks;
 import com.aashdit.digiverifier.config.superadmin.model.Source;
 import com.aashdit.digiverifier.config.superadmin.model.VendorCheckStatusMaster;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -77,9 +75,12 @@ public class ConventionalVendorliChecksToPerform {
 
     @Column(name = "source_name")
     private String sourceName;
+    @Column(name = "date_to_complete")
+    private String dateToComplete;
+    @Column(name = "stop_check")
+    private String stopCheck;
 
-//    @Column(name = "resubmitted")
-//    private String resubmitted;
-
+    @Column(name = "disabled")
+    private String disabled;
 
 }

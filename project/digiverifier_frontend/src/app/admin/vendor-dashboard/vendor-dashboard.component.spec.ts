@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { SelectedActivitiesComponent } from './selected-activities.component';
+import { OrgadminDashboardComponent } from './orgadmin-dashboard.component';
 
-describe('SelectedActivitiesComponent', () => {
-  let component: SelectedActivitiesComponent;
-  let fixture: ComponentFixture<SelectedActivitiesComponent>;
+describe('OrgadminDashboardComponent', () => {
+  let component: OrgadminDashboardComponent;
+  let fixture: ComponentFixture<OrgadminDashboardComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ SelectedActivitiesComponent ]
+      declarations: [ OrgadminDashboardComponent ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(SelectedActivitiesComponent);
+    fixture = TestBed.createComponent(OrgadminDashboardComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

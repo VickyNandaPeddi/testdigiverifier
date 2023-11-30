@@ -11,7 +11,7 @@ import Swal from 'sweetalert2';
 })
 export class LoginComponent implements OnInit {
   loginPage!: FormGroup;
-
+  
   constructor(
       private formBuilder: FormBuilder,
       private route: ActivatedRoute,
@@ -45,8 +45,8 @@ export class LoginComponent implements OnInit {
             icon: 'warning'
           });
         }
-
-
+        
+        
         this.authService.setRoles(response.data.roleCode);
         this.authService.setToken(response.data.jwtToken);
         this.authService.setuserName(response.data.userFirstName);
@@ -61,23 +61,23 @@ export class LoginComponent implements OnInit {
         }else if(role === "ROLE_ADMIN"){
           this.router.navigate(['/admin/BGVverification']);
         }else if(role === "ROLE_PARTNERADMIN"){
-          this.router.navigate(['/admin/orgadminDashboard']);
+          this.router.navigate(['/admin/BGVverification']);
         }else if(role === "ROLE_AGENTSUPERVISOR"){
-          this.router.navigate(['/admin/orgadminDashboard']);
+          this.router.navigate(['/admin/BGVverification']);
         }else if(role === "ROLE_AGENTHR"){
-          this.router.navigate(['/admin/orgadminDashboard']);
+          this.router.navigate(['/admin/BGVverification']);
         }else if(role === "ROLE_VENDOR"){
           this.router.navigate(['/admin/uploadvendorcheck']);
         }else{
           this.router.navigate(['/login']);
         }
-
+        
       },
       (error)=>{
         console.log(error);
       }
     )
-
+    
   }
 
 }

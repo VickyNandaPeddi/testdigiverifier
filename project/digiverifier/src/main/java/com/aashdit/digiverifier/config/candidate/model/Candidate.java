@@ -130,6 +130,9 @@ public class Candidate implements Serializable {
     @ManyToOne
     @JoinColumn(name = "candidate_sample_id")
     private CandidateSampleCsvXlsMaster candidateSampleId;
+    
+    private String drivingLicenseNumber;
+    private String passportNumber;
 
 
 //	@OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)

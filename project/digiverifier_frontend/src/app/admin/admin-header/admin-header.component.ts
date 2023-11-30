@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {Router} from '@angular/router';
 import {AuthenticationService} from 'src/app/services/authentication.service';
 import {OrgadminService} from 'src/app/services/orgadmin.service';
@@ -8,6 +8,7 @@ import * as buffer from "buffer";
 
 
 import * as XLSX from 'xlsx';
+import {HttpHeaders} from '@angular/common/http';
 
 @Component({
   selector: 'app-admin-header',
@@ -46,27 +47,17 @@ export class AdminHeaderComponent implements OnInit {
       });
   }
 
-  message: any;
-
-  generateConventionalExcelReport() {
-    this.candidateservice.generateDataForExcel()
-      .subscribe((data: any) => {
-        const link = document.createElement('a');
-        link.href = 'data:application/vnd.ms-excel;base64,' + data.message;
-        // @ts-ignore
-        // link.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + encodeURIComponent(data.message);
-
-        link.download = "ResponseExcel.xlsx";
-        link.target = '_blank';
-        link.click();
-
-      });
-
+  displayExcel() {
+    this.candidateservice.generateDataForExcel().subscribe((data: any) => {
+      const link = document.createElement('a');
+      link.href = 'data:application/vnd.ms-excel;base64,' + data.message;
+      link.download = "Conventional Utilization Report"+ ".xlsx";
+      link.target = '_blank';
+      link.click();
+    });
   }
 
-  openExcelFile(base64String: string, fileName: string) {
 
-  }
 
   public isLoggedIn() {
     return this.authService.isLoggedIn();

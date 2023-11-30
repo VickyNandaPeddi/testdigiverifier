@@ -37,4 +37,11 @@ public class VendorInitiatDto {
 
     private String documentUrl;
 
+    private String licheckId;
+
+    private String vendorName;
+
+    private String sourceName;
+
+    private String insufficiencyRemarks;
 }

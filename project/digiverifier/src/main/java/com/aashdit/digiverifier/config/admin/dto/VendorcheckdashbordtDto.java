@@ -8,6 +8,8 @@ import com.aashdit.digiverifier.config.admin.model.VendorUploadChecks;
 
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
@@ -47,6 +49,7 @@ public class VendorcheckdashbordtDto {
     // Boolean expireson;
     // Double tat;
     // String createdBy;
-
+    private LegalProceedingsDTO legalProcedings;
 
 }
+

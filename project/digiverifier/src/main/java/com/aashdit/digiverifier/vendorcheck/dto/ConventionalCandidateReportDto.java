@@ -1,6 +1,8 @@
 package com.aashdit.digiverifier.vendorcheck.dto;
 
+import com.aashdit.digiverifier.config.admin.dto.LegalProceedingsDTO;
 import com.aashdit.digiverifier.config.admin.dto.VendorUploadChecksDto;
+import com.aashdit.digiverifier.config.admin.model.CriminalCheck;
 import com.aashdit.digiverifier.config.candidate.dto.*;
 import com.aashdit.digiverifier.config.candidate.model.CandidateCafExperience;
 import com.aashdit.digiverifier.config.superadmin.Enum.ConventionalVerificationStatus;
@@ -13,14 +15,18 @@ import lombok.ToString;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
 @ToString
 public class ConventionalCandidateReportDto {
+
     private String name;
 
     private String comments;
+
+    private String requestId;
 
     private String candidateId;
 
@@ -55,12 +61,24 @@ public class ConventionalCandidateReportDto {
     private String caseInitiationDate;
 
     private String finalReportDate;
-    //
+
     private ConventionalVerificationStatus verificationStatus;
+
     private String interimReportDate;
 
-    private List<ConventionalVendorliChecksToPerform> liChecksDetails;
+    private List<LicheckRequiredResponseDto> liChecksDetails;
 
     private List<VendorUploadChecksDto> vendorProofDetails;
+
+
+    private Map<String, LegalProceedingsDTO> criminalCheckList;
+
     private String address;
+
+    private List<Map<String, List<String>>> pdfByes;
+
+    private String colorCode;
+
+    private List<Map<String, List<Map<String, String>>>> dataList;
+
 }

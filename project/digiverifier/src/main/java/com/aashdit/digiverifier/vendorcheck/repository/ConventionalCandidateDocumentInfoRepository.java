@@ -29,4 +29,7 @@ public interface ConventionalCandidateDocumentInfoRepository extends JpaReposito
 
     Boolean existsByRequestID(String requestId);
 
+    @Query(value = "SELECT cd  FROM ConventionalCandidateDocumentInfo cd  WHERE cd.documentUrl LIKE %?1  AND cd.requestID = ?2")
+    ConventionalCandidateDocumentInfo findByDocumentUrlAndRequestId(String checkName, String requestId);
+
 }

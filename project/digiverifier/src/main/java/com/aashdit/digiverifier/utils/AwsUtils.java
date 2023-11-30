@@ -67,6 +67,21 @@ public class AwsUtils {
         return Objects.nonNull(url) ? String.valueOf(url) : "";
     }
 
+    public String uploadFileAndGetPresignedUrl_bytes(String bucketName, String path, byte[] file,ObjectMetadata metadata) {
+        byte[] bytes = file;
+
+        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
+        PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, path, byteArrayInputStream, metadata);
+        s3Client.putObject(putObjectRequest);
+        Date expiration = getExpirationDate();
+
+
+        // Generate the presigned URL.
+        GeneratePresignedUrlRequest generatePresignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, path).withMethod(HttpMethod.GET).withExpiration(expiration);
+        URL url = s3Client.generatePresignedUrl(generatePresignedUrlRequest);
+        return Objects.nonNull(url) ? String.valueOf(url) : "";
+    }
+
     private Date getExpirationDate() {
         Date expiration = new Date();
         long expTimeMillis = expiration.getTime();

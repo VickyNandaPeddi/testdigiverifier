@@ -41,5 +41,7 @@ public class ConventionalAttributesMaster implements Serializable {
     @Column(name = "source_ids")
     private ArrayList<Long> sourceIds;
 
+    @Column(name = "global_check_type")
+    private String globalCheckType;
 
 }

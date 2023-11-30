@@ -2,11 +2,8 @@ package com.aashdit.digiverifier.vendorcheck.model;
 
 import com.aashdit.digiverifier.config.admin.model.User;
 import com.aashdit.digiverifier.config.candidate.model.StatusMaster;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.validator.constraints.UniqueElements;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -53,4 +50,10 @@ public class ConventionalVendorCandidatesSubmitted {
 
     @Column(name = "old_request_type")
     private String oldRequestType;
+
+    @Column(name = "fast_track")
+    private String fastTrack;
+
+    @Column(name = "stop_check_recived_date")
+    private String stopCheckRecivedDate;
 }

@@ -15,6 +15,9 @@ public interface ConventionalCafCandidateEducationRepository extends JpaReposito
 
     Boolean existsByConventionalRequestId(Long conventionalRequestId);
 
+    //    ConventionalCandidateCafEducation findByConventionalRequestId(Long conventionalRequestId);
+    List<ConventionalCandidateCafEducation> findByConventionalRequestId(Long conventionalRequestId);
+
     List<ConventionalCandidateCafEducation> findByConventionalCandidateId(Long conventionalCandidateId);
 
     @Modifying

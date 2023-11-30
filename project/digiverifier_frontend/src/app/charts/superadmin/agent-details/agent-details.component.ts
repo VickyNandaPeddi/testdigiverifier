@@ -1,11 +1,9 @@
-import {Component, NgZone, AfterViewInit, OnDestroy, OnInit} from '@angular/core';
+import { Component, NgZone, AfterViewInit, OnDestroy, OnInit } from '@angular/core';
 import * as am4core from "@amcharts/amcharts4/core";
 import * as am4charts from "@amcharts/amcharts4/charts";
 import am4themes_animated from "@amcharts/amcharts4/themes/animated";
-import {SuperadminDashboardService} from 'src/app/services/superadmin-dashboard.service';
-
+import { SuperadminDashboardService } from 'src/app/services/superadmin-dashboard.service';
 am4core.useTheme(am4themes_animated);
-
 @Component({
   selector: 'app-agent-details',
   templateUrl: './agent-details.component.html',
@@ -13,26 +11,23 @@ am4core.useTheme(am4themes_animated);
 })
 export class AgentDetailsComponent implements OnInit {
   private chart: am4charts.XYChart | undefined;
-  CharReportDelivery: any = [];
-
-  constructor(private zone: NgZone, private superadminDB: SuperadminDashboardService) {
-  }
-
+  CharReportDelivery:any=[];
+  constructor(private zone: NgZone, private superadminDB: SuperadminDashboardService) { }
   ngAfterViewInit() {
-    setTimeout(() => {
+    setTimeout(() =>{
       this.ngOnDestroy();
       this.loadCharts();
-    }, 50);
+    },50);
   }
 
-  loadCharts() {
+  loadCharts(){
     this.zone.runOutsideAngular(() => {
       let chart = am4core.create("agentDetails", am4charts.XYChart);
       chart.logo.disabled = true;
       chart.padding(0, 0, 0, 0);
       chart.paddingRight = 0;
-      this.superadminDB.getTestData().subscribe((uploadinfo: any) => {
-        this.CharReportDelivery = uploadinfo;
+      this.superadminDB.getTestData().subscribe((uploadinfo: any)=>{
+        this.CharReportDelivery=uploadinfo;
         //console.log(this.CharReportDelivery);
         let data = [];
         for (let i = 0; i < this.CharReportDelivery.length; i++) {
@@ -42,36 +37,36 @@ export class AgentDetailsComponent implements OnInit {
       });
 
 // Add and configure Series
-      var categoryAxis = chart.xAxes.push(new am4charts.CategoryAxis());
-      categoryAxis.dataFields.category = "name";
-      categoryAxis.renderer.minGridDistance = 30;
-      categoryAxis.renderer.labels.template.fill = am4core.color("#000");
-      categoryAxis.renderer.labels.template.fontSize = 13;
+var categoryAxis = chart.xAxes.push(new am4charts.CategoryAxis());
+categoryAxis.dataFields.category = "name";
+categoryAxis.renderer.minGridDistance = 30;
+categoryAxis.renderer.labels.template.fill = am4core.color("#000");
+categoryAxis.renderer.labels.template.fontSize = 13;
 
-      var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
-      valueAxis.renderer.grid.template.strokeDasharray = "4,4";
+var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+valueAxis.renderer.grid.template.strokeDasharray = "4,4";
 
 // This creates initial animation
-      // Create series
-      var series = chart.series.push(new am4charts.ColumnSeries());
-      series.dataFields.valueY = "value";
-      series.dataFields.categoryX = "name";
-      series.columns.template.propertyFields.fill = "color";
-      series.columns.template.propertyFields.stroke = "color";
-      series.columns.template.column.cornerRadiusTopLeft = 15;
-      series.columns.template.column.cornerRadiusTopRight = 15;
-      series.columns.template.tooltipText = "{categoryX}: [bold]{valueY}[/b]";
-      chart.colors.list = [
-        am4core.color("#fde05d"),
-        am4core.color("#2E59D9"),
-        am4core.color("#21a990"),
-        am4core.color("#6ba6fe"),
-        am4core.color("#F72525"),
-      ];
+ // Create series
+ var series = chart.series.push(new am4charts.ColumnSeries());
+ series.dataFields.valueY = "value";
+ series.dataFields.categoryX = "name";
+ series.columns.template.propertyFields.fill = "color";
+ series.columns.template.propertyFields.stroke = "color";
+ series.columns.template.column.cornerRadiusTopLeft = 15;
+ series.columns.template.column.cornerRadiusTopRight = 15;
+ series.columns.template.tooltipText = "{categoryX}: [bold]{valueY}[/b]";
+ chart.colors.list = [
+  am4core.color("#fde05d"),
+  am4core.color("#2E59D9"),
+  am4core.color("#21a990"),
+  am4core.color("#6ba6fe"),
+  am4core.color("#F72525"),
+];
 
     });
 
-  }
+}
 
   ngOnDestroy() {
     this.zone.runOutsideAngular(() => {
@@ -80,7 +75,6 @@ export class AgentDetailsComponent implements OnInit {
       }
     });
   }
-
   ngOnInit(): void {
     //am4core.options.autoDispose = true;
 

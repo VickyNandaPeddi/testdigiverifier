@@ -331,8 +331,6 @@ export class OrgadminUploaddetailsComponent implements OnInit, OnDestroy, AfterV
       var cboxRolesinput = $('.childCheck');
       var arrNumber: any = [];
       $.each(cboxRolesinput, function (idx, elem) {
-
-        //console.log(inputValues);
         arrNumber.push($(this).val());
       });
 

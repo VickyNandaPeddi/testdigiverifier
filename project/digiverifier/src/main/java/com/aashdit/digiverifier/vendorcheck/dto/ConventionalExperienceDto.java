@@ -10,7 +10,7 @@ import java.util.Date;
 @Setter
 public class ConventionalExperienceDto {
 
-    private Long Id;
+//    private Long Id;
     private String employmentType;
     private String duration;
     private String designation;

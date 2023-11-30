@@ -44,10 +44,13 @@ export class ConventionalCReportApprovalComponent implements OnInit {
   jsonData: any;
   finalReportDisabled: number | undefined;
   approveenable: any;
+  candidateIdView: any;
 
   constructor(private modalService: NgbModal, private customer: CustomerService, private candidateService: CandidateService, private router: ActivatedRoute, private navRouter: Router, private loaderService: LoaderService) {
     // this.candidateCode = this.router.snapshot.paramMap.get('candidateCode');
     const candidateid = localStorage.getItem('capprequestid');
+    this.candidateIdView = localStorage.getItem('cappcandidateId');
+    this.candidateName = localStorage.getItem('cappname');
     console.log("candidate id cproval" + this.candidateCode);
     this.candidateCode = candidateid;
     this.approveenable = localStorage.getItem('approveenable');
@@ -57,7 +60,7 @@ export class ConventionalCReportApprovalComponent implements OnInit {
       // @ts-ignore
       this.candidateName = this.cApplicationFormDetails.candidateName;
       this.employ = this.cApplicationFormDetails.vendorProofDetails;
-      this.finalReportDisabled = this.cApplicationFormDetails.finalReportStatus;
+//      this.finalReportDisabled = this.cApplicationFormDetails.finalReportStatus;
       if (this.cApplicationFormDetails.candidateResume) {
         this.candidateResume = 'data:application/pdf;base64,' + this.cApplicationFormDetails.candidateResume.document;
       }
@@ -168,8 +171,8 @@ export class ConventionalCReportApprovalComponent implements OnInit {
       this.loaderService.hide();
     }
   }
-
-  submitReportApproval(formReportApproval: FormGroup) {
+  //      formReportApproval: FormGroup
+  submitReportApproval() {
     // this.candidateService.generateReportWithReportType(this.candidateCode, "FINAL", "UPDATE").subscribe(
     //   (data: any) => {
     //     // @ts-ignore
@@ -255,34 +258,6 @@ export class ConventionalCReportApprovalComponent implements OnInit {
 
   reportData: any;
 
-  generateExcel(): void {
-
-    this.candidateService.generateDataForExcel().subscribe(data => {
-      // @ts-ignore
-      this.reportData = data.data;
-    });
-
-
-    const
-      worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(this.reportData);
-    const
-      workbook: XLSX.WorkBook = {Sheets: {'data': worksheet}, SheetNames: ['data']};
-    // @ts-ignore
-    const headingCellStyle: XLSX.Style = {font: {bold: true}, fill: {fgColor: {rgb: 'FFFF00'}}};
-    XLSX.utils.sheet_add_json(worksheet, this.reportData, {skipHeader: true, origin: 'A2'});
-    worksheet['A1'].s = headingCellStyle;
-    worksheet['B1'].s = headingCellStyle;
-    worksheet['C1'].s = headingCellStyle;
-    worksheet['D1'].s = headingCellStyle;
-    worksheet['E1'].s = headingCellStyle;
-    worksheet['F1'].s = headingCellStyle;
-
-    const excelBuffer: any = XLSX.write(workbook, {bookType: 'xlsx', type: 'array'});
-    this
-      .saveAsExcelFile(excelBuffer,
-        'reportExcel'
-      );
-  }
 
   convertToExcel(jsonData: any): void {
 
@@ -316,6 +291,11 @@ export class ConventionalCReportApprovalComponent implements OnInit {
 
   }
 
+  viewInterimReport() {
+    this.candidateService.generateReportWithReportType(this.candidateCode, "INTERIM", "DONT").subscribe((data: any) =>
+      window.open(data.data, "_blank")
+    );
+  }
 
   InterimReport() {
     // console.log(this.candidateCode, "-----------------------------------------------");
@@ -341,4 +321,32 @@ export class ConventionalCReportApprovalComponent implements OnInit {
         }
       });
   }
+
+  InterimConfirmation(content: any) {
+    this.modalService.open(content, { centered: true }).result.then(
+      (result) => {
+        if (result === 'confirm') {
+          this.InterimReport();
+        } else {
+        }
+      },
+      (reason) => {
+      }
+    );
+  }
+
+  FinalConfirmation(content: any) {
+    this.modalService.open(content, { centered: true }).result.then(
+      (result) => {
+        if (result === 'confirm') {
+          this.submitReportApproval();
+        } else {
+        }
+      },
+      (reason) => {
+      }
+    );
+  }
 }
+
+// [disabled]="finalReportDisabled === 8" [disabled]="approveenable === 'false'"

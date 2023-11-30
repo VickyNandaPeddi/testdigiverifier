@@ -11,6 +11,7 @@ import {Router} from '@angular/router';
 import * as am4core from '@amcharts/amcharts4/core';
 import * as am4charts from '@amcharts/amcharts4/charts';
 import {CandidateService} from "../../services/candidate.service";
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-candidatesubmitted-conventional',
@@ -19,6 +20,7 @@ import {CandidateService} from "../../services/candidate.service";
 })
 export class CandidatesubmittedConventionalComponent implements OnInit {
   pageTitle = 'Conventional Dashboard';
+  searchText: string = '';
   closeModal: string | undefined;
   selectedFiles: any;
   currentFile: any;
@@ -33,6 +35,11 @@ export class CandidatesubmittedConventionalComponent implements OnInit {
   getRolePerMissionCodes: any = [];
   AGENTUPLOAD_stat: boolean = false;
   CANDIDATEUPLOAD_stat: boolean = false;
+  fileName = 'Conventional_Excel.xlsx';
+  headers: boolean = false;
+  currentPageIndex: number = 0;
+  currentPage = 1;
+  pageSize: number = 10;
   fromDate: any;
   toDate: any;
   getToday: NgbDate;
@@ -42,13 +49,14 @@ export class CandidatesubmittedConventionalComponent implements OnInit {
   initToday: any;
   Interim: boolean = false;
   Final: boolean = false;
+  Action: boolean = false;
   dashboardFilter = new FormGroup({
     fromDate: new FormControl('', Validators.required),
     toDate: new FormControl('', Validators.required),
   });
 
   candidateData: any;
-
+  filteredData: any[] = [];
   // added for chart
   getChartData: any = [];
   ChartDataListing: any = [];
@@ -84,23 +92,24 @@ export class CandidatesubmittedConventionalComponent implements OnInit {
         this.getUserByOrganizationIdAndUserId = data.data;
 
       });
-    var userId: any = localStorage.getItem('userId');
-    var fromDate: any = localStorage.getItem('dbFromDate');
-    var toDate: any = localStorage.getItem('dbToDate');
-    let filterData = {
-      userId: userId,
-      fromDate: fromDate,
-      toDate: toDate,
-      status: this.getStatCodes,
-    };
+    // var userId: any = localStorage.getItem('userId');
+    // var fromDate: any = localStorage.getItem('dbFromDate');
+    // var toDate: any = localStorage.getItem('dbToDate');
+    // let filterData = {
+    //   userId: userId,
+    //   fromDate: fromDate,
+    //   toDate: toDate,
+    //   status: this.getStatCodes,
+    // };
 
-    this.dashboardservice
-      .getCandidatesSubmittedDetailsByDateRange(filterData)
-      .subscribe((resp: any) => {
-        // @ts-ignore
-        this.candidateData = resp.data;
-      });
-
+    // this.dashboardservice
+    //   .getCandidatesSubmittedDetailsByDateRange(filterData)
+    //   .subscribe((resp: any) => {
+    //     // @ts-ignore
+    //     this.candidateData = resp.data;
+    //     this.filteredData=this.candidateData;
+    //   });
+    this.getCandidateData();
     this.getToday = calendar.getToday();
     if (
       localStorage.getItem('dbFromDate') == null &&
@@ -148,6 +157,29 @@ export class CandidatesubmittedConventionalComponent implements OnInit {
     });
   }
 
+  applyFilter() {
+    const filterText = this.searchText.toLowerCase();
+    if (filterText === '') {
+      this.filteredData = this.candidateData;
+    } else {
+      this.filteredData = this.candidateData.filter((item: any) =>
+        item.name.toLowerCase().includes(filterText)
+      );
+    }
+  }
+
+  performSearch() {
+    if (this.searchText === "") {
+      this.getCandidateData();
+    }
+    console.log('Search Text:', this.searchText);
+    this.customer.getAllSearchData(this.searchText).subscribe((data: any) => {
+      this.filteredData = data.data;
+      console.log("", data);
+    })
+  }
+
+
   VendorID: any;
 
   ngOnInit(): void {
@@ -158,17 +190,39 @@ export class CandidatesubmittedConventionalComponent implements OnInit {
       if (this.getStatCodes === "NEWUPLOAD") {
         $(".dbtabheading").text("New Upload-Conventional");
         this.Interim = true;
-        this.Final = false;
+        this.Final = true;
+        this.Action = true;
       } else if (this.getStatCodes === "INPROGRESS") {
         $(".dbtabheading").text("Inprogress");
         this.Interim = true;
         this.Final = true;
-      } else if (this.getStatCodes === "QCPending") {
+        this.Action = true;
+      } else if (this.getStatCodes === "PENDINGAPPROVAL") {
         $(".dbtabheading").text("QC Pending");
-        this.Interim = false;
+        this.Interim = true;
+        this.Final = true;
+        this.Action = true;
+      } else if (this.getStatCodes === "STOPBGV") {
+        $(".dbtabheading").text("stopbgv");
+        this.Interim = true;
+        this.Final = true;
+        this.Action = true;
+      }else if (this.getStatCodes === "FASTTRACK") {
+        $(".dbtabheading").text("fasttrack");
+        this.Interim = true;
+        this.Final = true;
+        this.Action = true;
+      } else if (this.getStatCodes === "INTERIMREPORT") {
+        $(".dbtabheading").text("Interim Report");
+        this.Interim = true;
         this.Final = false;
+        this.Action = true;
+      } else if (this.getStatCodes === "FINALREPORT") {
+        $(".dbtabheading").text("Final Report");
+        this.Interim = false;
+        this.Final = true;
+        this.Action = false;
       }
-
       this.containerStat = true;
       //isCBadmin required for drilldown dashboard at Superadmin
     }
@@ -190,11 +244,42 @@ export class CandidatesubmittedConventionalComponent implements OnInit {
       });
   }
 
+  getCandidateData() {
+    var userId: any = localStorage.getItem('userId');
+    var fromDate: any = localStorage.getItem('dbFromDate');
+    var toDate: any = localStorage.getItem('dbToDate');
+    let filterData = {
+      userId: userId,
+      fromDate: fromDate,
+      toDate: toDate,
+      status: this.getStatCodes,
+    };
+
+    this.dashboardservice
+      .getCandidatesSubmittedDetailsByDateRange(filterData)
+      .subscribe((resp: any) => {
+        // @ts-ignore
+        this.candidateData = resp.data;
+        this.filteredData = this.candidateData;
+        const startIndex = this.currentPageIndex * this.pageSize;
+        const endIndex = startIndex + this.pageSize;
+        return this.filteredData.slice(startIndex, endIndex);
+
+      });
+
+  }
+
   ngAfterViewInit() {
     setTimeout(() => {
       // this.ngOnDestroy();
       this.loadCharts();
     }, 50);
+  }
+
+  getStatcodeFromLocalStorage(): string {
+    // Retrieve the statcode from local storage
+    const statcode = localStorage.getItem('statCode');
+    return statcode || ''; // Return an empty string if statcode is null or undefined
   }
 
   loadCharts() {
@@ -448,15 +533,17 @@ export class CandidatesubmittedConventionalComponent implements OnInit {
     });
   }
 
-  conventionalvendor(candidateId: any, status: any) {
+  conventionalvendor(requestid: any, candidateId: any, name: any, status: any) {
     this.addcheckDisabled = true;
     // console.log(candidateId, '-----------------------------------------------');
     this.loaderService.show();
-    this.licheckByCandidateID(candidateId).then((lickedata: any) => {
+    this.licheckByCandidateID(requestid).then((lickedata: any) => {
       if (lickedata != null) {
         this.loaderService.hide();
       }
-      localStorage.setItem("requestid", candidateId);
+      localStorage.setItem("requestid", requestid);
+      localStorage.setItem("candidateId", candidateId);
+      localStorage.setItem("name", name);
       const navURL = 'admin/conventionalVendorcheck';
       this.navRouter.navigate([navURL]);
     });
@@ -477,4 +564,73 @@ export class CandidatesubmittedConventionalComponent implements OnInit {
       window.open(data.data, "_blank")
     );
   }
+
+  exportExcel(): void {
+    const data = this.filteredData;
+    const excelData = data.map((item: any) => [
+      item.candidateId,        // Candidate ID
+      item.psNo,               // PS.No
+      item.name,               // Candidate Name
+      item.requestId,          // Request ID
+      item.requestType,        // Request Type
+      this.formatDate(item.createdOn),// Uploaded Date
+      item.status.statusName,  // Status (statusName)
+      item.fastTrack,          // Fast Track
+      item.stopCheckRecivedDate // Stop Check Received Date
+    ]);
+    // Excel column headers
+    const headers = [
+      'Candidate ID',
+      'PS.No',
+      'Candidate Name',
+      'Request ID',
+      'Request Type',
+      'Uploaded Date',
+      'Status',
+      'Fast Track',
+      'Stop Check Received Date'
+    ];
+    excelData.unshift(headers);
+    const ws: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(excelData);
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+    XLSX.writeFile(wb, this.fileName);
+  }
+
+  formatDate(date: any): string {
+    const formattedDate = new Date(date);
+    const day = ('0' + formattedDate.getDate()).slice(-2);
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = monthNames[formattedDate.getMonth()];
+    const year = formattedDate.getFullYear();
+    const hours = ('0' + formattedDate.getHours()).slice(-2);
+    const minutes = ('0' + formattedDate.getMinutes()).slice(-2);
+    return `${day}-${month}-${year} ${hours}:${minutes}`;
+  }
+
+  get totalPages(): number {
+    const filteredItems = this.filteredData;
+    return Math.ceil(filteredItems.length / this.pageSize);
+  }
+
+  goToPrevPage(): void {
+    // this.idvalue=idvalue;
+    if (this.currentPageIndex > 0) {
+      this.currentPageIndex--;
+    }
+  }
+
+  goToNextPage(): void {
+    if (this.currentPageIndex < this.totalPages - 1) {
+      this.currentPageIndex++;
+    }
+  }
+
+  filteredDatapagination(): any[] {
+    const filteredItems = this.filteredData;
+    const startIndex = this.currentPageIndex * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return filteredItems.slice(startIndex, endIndex);
+  }
+
 }

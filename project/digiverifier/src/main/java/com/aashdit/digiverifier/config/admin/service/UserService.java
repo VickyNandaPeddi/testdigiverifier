@@ -67,4 +67,6 @@ public interface UserService {
     ServiceOutcome<List<VendorChecks>> getallVendorChecsa(Long vendorId);
 
 //    public String uploadVendorRemarksForChecks(Long vendorCheckId, String vendorRemarksJson);
+
+    public ServiceOutcome<List<VendorChecksDto>> searchAllVendorData(String searchText);
 }

@@ -1,6 +1,5 @@
 package com.aashdit.digiverifier.config.superadmin.service;
 
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -723,26 +722,29 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     public ServiceOutcome<List<OrganizationDto>> getOrganizationListAfterBilling() {
         ServiceOutcome<List<OrganizationDto>> svcSearchResult = new ServiceOutcome<List<OrganizationDto>>();
-        try {
-            String query = "select distinct (sm.organization_id),org.organization_name from t_dgv_service_master sm join t_dgv_organization_master org on org.organization_id = sm.organization_id where org.is_active =true";
-            Query resultQuery = entityManager.createNativeQuery(query.toString());
-            List<Object[]> organizationObjectList = resultQuery.getResultList();
-            List<OrganizationDto> organizationList = organizationObjectList.stream().map(OrganizationDto::new).collect(Collectors.toList());
-            if (!organizationList.isEmpty()) {
-                svcSearchResult.setData(organizationList);
-                svcSearchResult.setOutcome(true);
-                svcSearchResult.setMessage("SUCCESS");
-            } else {
-                svcSearchResult.setData(null);
-                svcSearchResult.setOutcome(false);
-                svcSearchResult.setMessage("NOT FOUND");
-            }
-        } catch (Exception ex) {
-            log.error("Exception occured in getServiceTypeConfigByOrgId method in OrganizationServiceImpl-->" + ex);
-            svcSearchResult.setData(null);
-            svcSearchResult.setOutcome(false);
-            svcSearchResult.setMessage("Something Went Wrong, Please Try After Sometimes.");
-        }
+//        try {
+//            StringBuilder query = new StringBuilder();
+//            query.append("select distinct (sm.organization_id),org.organization_name ");
+//            query.append("from t_dgv_service_master sm ");
+//            query.append("join t_dgv_organization_master org on org.organization_id = sm.organization_id where org.is_active =true;");
+//            Query resultQuery = entityManager.createNativeQuery(query.toString());
+//            List<Object[]> organizationObjectList = resultQuery.getResultList();
+//            List<OrganizationDto> organizationList = organizationObjectList.stream().map(OrganizationDto::new).collect(Collectors.toList());
+//            if (!organizationList.isEmpty()) {
+//                svcSearchResult.setData(organizationList);
+//                svcSearchResult.setOutcome(true);
+//                svcSearchResult.setMessage("SUCCESS");
+//            } else {
+//                svcSearchResult.setData(null);
+//                svcSearchResult.setOutcome(false);
+//                svcSearchResult.setMessage("NOT FOUND");
+//            }
+//        } catch (Exception ex) {
+//            log.error("Exception occured in getServiceTypeConfigByOrgId method in OrganizationServiceImpl-->" + ex);
+//            svcSearchResult.setData(null);
+//            svcSearchResult.setOutcome(false);
+//            svcSearchResult.setMessage("Something Went Wrong, Please Try After Sometimes.");
+//        }
         return svcSearchResult;
     }
 
@@ -903,7 +905,9 @@ public class OrganizationServiceImpl implements OrganizationService {
         ServiceOutcome<List<VendorCheckStatusMaster>> svcSearchResult = new ServiceOutcome<List<VendorCheckStatusMaster>>();
         try {
             List<VendorCheckStatusMaster> vendorCheckStatusMasterList = vendorCheckStatusMasterRepository.findAll();
-            List<VendorCheckStatusMaster> filteredList = vendorCheckStatusMasterList.stream().filter(vendor -> vendor.getVendorCheckStatusMasterId() != 7 && vendor.getVendorCheckStatusMasterId() != 8).collect(Collectors.toList());
+            List<VendorCheckStatusMaster> filteredList = vendorCheckStatusMasterList.stream()
+                    .filter(vendor -> vendor.getVendorCheckStatusMasterId() != 7 && vendor.getVendorCheckStatusMasterId() != 8 && vendor.getVendorCheckStatusMasterId() != 2)
+                    .collect(Collectors.toList());
             if (!filteredList.isEmpty()) {
                 svcSearchResult.setData(filteredList);
                 svcSearchResult.setOutcome(true);
