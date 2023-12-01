@@ -39,29 +39,3 @@
   justify-content: flex-end; /* Align to the right */
   padding: 10px;
 }
-
-
-/* tabs.component.css */
-
-.tab-container {
-  display: flex;
-}
-
-.tab {
-  padding: 10px;
-  cursor: pointer;
-  border: 1px solid #ccc;
-  border-radius: 5px 5px 0 0;
-  background-color: #f1f1f1;
-  margin-right: 5px;
-}
-
-.tab.active {
-  background-color: #ddd;
-}
-
-.tab-content {
-  border: 1px solid #ccc;
-  border-radius: 0 0 5px 5px;
-  padding: 15px;
-}

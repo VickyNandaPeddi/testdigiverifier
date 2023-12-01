@@ -25,7 +25,7 @@ export class CustomerService {
 
   getVendorReportAttributes(vendorCheckID: any,type:any) {
     return this.http.get(`${environment.apiUrl}/api/vendorCheck/getConventionalAttributesMaster/${vendorCheckID}/${type}`);
-  }
+    }
 
   addAndUpdateLicheckByCandidateID({candidateId}: any) {
     return this.http.post(`${environment.apiUrl}/api/vendorCheck/liCheck`, candidateId);

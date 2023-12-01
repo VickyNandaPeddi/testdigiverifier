@@ -178,6 +178,7 @@
   </div>
 </ng-template>
 
+
 <ng-template #modalCandidate let-modal>
   <div class="modal-header">
     <h4 class="modal-title" id="modal-basic-title">Upload Proof</h4>
@@ -340,166 +341,198 @@
             </div>
           </div>
           <ng-template [ngIf]="isVendorAttributeForm && selectedStatus !== '3' && globaldataBaseCheck===false">
-            <!-- Legal Proceedings Form starts-->
-            <div formGroupName="legalProcedings">
-              <div formGroupName="civilProceedings">
-                <div class="container my-4">
-                  <div class="row">
-                    <div class="col-md-12 text-center">
-                      <b class="font-weight-bold text-primary">Civil Proceedings</b>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-md-6 mx-auto">
-                      <div class="form-group">
-                        <label>Date of Search</label>
-                        <input type="date" class="form-control form-control-sm" formControlName="dateOfSearch">
+            <!-- Legal Proceedings Form -->
+            <div formGroupName="legalProcedings" style="width: -webkit-fill-available;">
+              <!-- Civil Proceedings -->
+              <div formArrayName="civilProceedingsList">
+                <div *ngFor="let civil of civilProceedingsList; let i = index" [formGroupName]="i">
+                  <!-- Your civil proceeding form controls go here -->
+                  <div class="container my-4">
+                    <div class="row">
+                      <div class="col-md-12 text-center">
+                        <b class="font-weight-bold text-primary">Civil Proceedings - <span> {{ i === 0 ? 'High Court' :
+                            i === 1 ? 'Civil Court' : '' }}</span></b>
                       </div>
                     </div>
-                    <div class="col-md-6 mx-auto">
-                      <div class="form-group">
-                        <label>Court</label>
-                        <select class="form-control form-control-sm" formControlName="court">
-                          <option value="">- Select Court-</option>
-                          <option value="High Court">High Court</option>
-                          <option value="Civil Court">Civil Court</option>
-                        </select>
+                    <div class="row">
+                      <div class="col-md-6 mx-auto">
+                        <div class="form-group">
+                          <label>Date of Search</label>
+                          <input type="date" class="form-control form-control-sm" formControlName="dateOfSearch">
+                        </div>
                       </div>
-                    </div>
-                    <div class="col-md-6 mx-auto">
-                      <div class="form-group">
-                        <label>Jurisdiction</label>
-                        <input type="text" class="form-control form-control-sm" formControlName="jurisdiction">
-                      </div>
-                    </div>
-                    <div class="col-md-6 mx-auto">
-                      <div class="form-group">
-                        <label>Name of the Court</label>
-                        <input type="text" class="form-control form-control-sm" formControlName="nameOfTheCourt">
-                      </div>
-                    </div>
-                    <div class="col-md-12 mx-auto">
-                      <div class="form-group">
-                        <label>Result</label>
-                        <input type="text" class="form-control form-control-sm" formControlName="result">
+                      <!-- <div class="col-md-6 mx-auto"> -->
+                      <!-- <div class="form-group"> -->
+                      <!-- <label>Court</label> -->
+                      <!-- <select class="form-control form-control-sm" formControlName="court">
+                <option value="">- Select Court-</option>
+                <option value="Civil Court">Civil Court</option>
+                <option value="High Court">High Court</option>
+                
+              </select> -->
+                      <!-- </div> -->
+                      <!-- </div> -->
+                      <!-- <div class="col-md-6 mx-auto"> -->
+                      <!-- <div class="form-group"> -->
+                      <!-- <label>Jurisdiction</label> -->
+                      <input type="hidden" class="form-control form-control-sm" formControlName="court">
+
+                      <input type="hidden" class="form-control form-control-sm" formControlName="jurisdiction">
+                      <!-- </div> -->
+                      <!-- </div> -->
+                      <!-- <div class="col-md-6 mx-auto"> -->
+                      <!-- <div class="form-group"> -->
+                      <!-- <label>Name of the Court</label> -->
+                      <input type="hidden" class="form-control form-control-sm" formControlName="nameOfTheCourt">
+                      <!-- </div> -->
+                      <!-- </div> -->
+                      <div class="col-md-6 mx-auto">
+                        <div class="form-group">
+                          <label>Result</label>
+                          <input type="text" class="form-control form-control-sm" formControlName="result">
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              <div formGroupName="criminalProceedings">
-                <div class="container my-4">
-                  <div class="row">
-                    <div class="col-md-12 text-center">
-                      <b class="font-weight-bold text-primary">Criminal Proceedings</b>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-md-6 mx-auto">
-                      <div class="form-group">
-                        <label>Date of Search</label>
-                        <input type="date" class="form-control form-control-sm" formControlName="dateOfSearch">
+
+              <!-- Add button to add new civil proceeding -->
+              <!-- <button type="button" (click)="addCivilProceeding()" [disabled]="civilProceedingsCount >= 2" >Add Civil Proceeding</button> -->
+
+              <div formArrayName="criminalProceedingsList">
+                <div *ngFor="let civil of criminalProceedingsList; let i = index" [formGroupName]="i">
+
+                  <div class="container my-4">
+                    <div class="row">
+                      <div class="col-md-12 text-center">
+                        <b class="font-weight-bold text-primary">Criminal Proceedings - <span>{{ i === 0 ? 'Session
+                            Court' : i === 1 ? 'Magistrate Court' : '' }}</span></b>
                       </div>
                     </div>
-                    <div class="col-md-6 mx-auto">
-                      <div class="form-group">
-                        <label>Court</label>
-                        <select class="form-control form-control-sm" formControlName="court">
-                          <option value="">- Select Court-</option>
-                          <option value="Session Court">Session Court</option>
-                          <option value="Magistrate Court">Magistrate Court</option>
-                        </select>
+                    <div class="row">
+                      <div class="col-md-6 mx-auto">
+                        <div class="form-group">
+                          <label>Date of Search</label>
+                          <input type="date" class="form-control form-control-sm" formControlName="dateOfSearch">
+                        </div>
                       </div>
-                    </div>
-                    <div class="col-md-6 mx-auto">
-                      <div class="form-group">
-                        <label>Jurisdiction</label>
-                        <input type="text" class="form-control form-control-sm" formControlName="jurisdiction">
-                      </div>
-                    </div>
-                    <div class="col-md-6 mx-auto">
-                      <div class="form-group">
-                        <label>Name of the Court</label>
-                        <input type="text" class="form-control form-control-sm" formControlName="nameOfTheCourt">
-                      </div>
-                    </div>
-                    <div class="col-md-12 mx-auto">
-                      <div class="form-group">
-                        <label>Result</label>
-                        <input type="text" class="form-control form-control-sm" formControlName="result">
+                      <input type="hidden" class="form-control form-control-sm" formControlName="court">
+                      <input type="hidden" class="form-control form-control-sm" formControlName="jurisdiction">
+
+                      <input type="hidden" class="form-control form-control-sm" formControlName="nameOfTheCourt">
+
+                      <div class="col-md-6 mx-auto">
+                        <div class="form-group">
+                          <label>Result</label>
+                          <input type="text" class="form-control form-control-sm" formControlName="result">
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
+                <!-- end -->
               </div>
             </div>
             <!-- Legal Proceedings Form ends-->
           </ng-template>
 
-          <div *ngIf="globaldataBaseCheck && selectedStatus !== '3'">
-            <!--            <div class="tab-container">-->
-            <!--              &lt;!&ndash; Global Tab &ndash;&gt;-->
-            <!--              <div class="tab" (click)="selectTab('global')" [class.active]="selectedTab === 'global'">-->
-            <!--                Global-->
-            <!--              </div>-->
-            <!--              &lt;!&ndash; Indian Tab &ndash;&gt;-->
-            <!--              <div class="tab" (click)="selectTab('indian')" [class.active]="selectedTab === 'indian'">-->
-            <!--                Indian-->
-            <!--              </div>-->
-            <!--            </div>-->
-            <!--            <ng-container *ngIf="selectedTab === 'global'">-->
-            <div class="row">
-              <!--              <div class="tab" (click)="selectTab('global')" [class.active]="selectedTab === 'global'">&ndash;&gt;-->
-              <div class="col-6">
-                <div>
-                  <select class="form-control" #seleGlobalattr>
-                    <option *ngFor="let attribute of globalAttributeValue" [value]="attribute.label"
-                            [disabled]="isOptionSelectedGlobal(attribute.label)">
-                      {{ attribute.label }}
-                    </option>
-                  </select>
-                  <button [disabled]="this.disableGlobalOptionButton"
-                          (click)="addSelectedGlobalAttribute(seleGlobalattr.value)">Add Global Attribute
-                  </button>
-                  <div *ngFor="let attribute of selectedGlobalAttributeValue; let i = index;" class="col-md-12">
-                    <div class="form-group">
-                      <label class="required">{{ attribute.label }}</label>
-                    </div>
-                    <input type="text" #gloval
-                           class="form-control form-control-sm" [(ngModel)]="attribute.value"
-                           (keyup)="onKeyUpGlobal(gloval.value, attribute.label)">
-                  </div>
-                </div>
-              </div>
-              <!--            </ng-container>-->
-              <!--            <ng-container *ngIf="selectedTab === 'indian'">-->
-
+          <div class="container my-4">
+            <div *ngIf="globaldataBaseCheck && selectedStatus !== '3'">
+              <!--            <div class="tab-container">-->
+              <!--              &lt;!&ndash; Global Tab &ndash;&gt;-->
+              <!--              <div class="tab" (click)="selectTab('global')" [class.active]="selectedTab === 'global'">-->
+              <!--                Global-->
+              <!--              </div>-->
+              <!--              &lt;!&ndash; Indian Tab &ndash;&gt;-->
               <!--              <div class="tab" (click)="selectTab('indian')" [class.active]="selectedTab === 'indian'">-->
-              <div class="col-6">
-                <select class="form-control" #seleattrIndian>
-                  <option *ngFor="let attribute of indiaAttributeValue" [value]="attribute.label"
-                          [disabled]="isOptionSelectedIndian(attribute.label)">
-                    {{ attribute.label}}
-                  </option>
-                </select>
-                <button [disabled]="this.disableIndianOptionButton"
-                        (click)="addSelectedIndianAttribute(seleattrIndian.value)">Add Indian Attribute
-                </button>
-                <div *ngFor="let attribute of selectedIndiaAttributeValue; let i = index;" class="col-md-12">
-                  <div class="form-group">
-                    <label class="required">{{ attribute.label }}</label>
+              <!--                Indian-->
+              <!--              </div>-->
+              <!--            </div>-->
+              <!--            <ng-container *ngIf="selectedTab === 'global'">-->
+              <!-- <div class="row"> -->
+                <!--              <div class="tab" (click)="selectTab('global')" [class.active]="selectedTab === 'global'">&ndash;&gt;-->
+                <div class="row">
+                  <div class="col-md-12 text-center">
+                    <b class="font-weight-bold text-primary">India Level Database Search</b>
                   </div>
-                  <input type="text" #indian
-                         class="form-control form-control-sm" [(ngModel)]="attribute.value"
-                         (keyup)="onKeyUpIndian(indian.value, attribute.label)">
                 </div>
-              </div>
-
+                <div class="row my-4">
+                  <div class="col-md-8  mx-auto">
+                    <select class="form-control form-control-sm" #seleGlobalattr>
+                      <option *ngFor="let attribute of globalAttributeValue" [value]="attribute.label"
+                              [disabled]="isOptionSelectedGlobal(attribute.label)">
+                        {{ attribute.label }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="col-md-4 mx-auto">
+                    <button [disabled]="this.disableGlobalOptionButton" class="btn btn-primary btn-sm"
+                            (click)="addSelectedGlobalAttribute(seleGlobalattr.value)">Add Indian Attribute
+                    </button>
+                  </div>
+                </div>
+                <div *ngFor="let attribute of selectedGlobalAttributeValue; let i = index;">
+                  <div class="row">
+                    <div class="col-md-6 mx-auto">
+                      <div class="form-group">
+                        <label class="required">{{ attribute.label }}</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6 mx-auto">
+                      <input type="text" #gloval
+                             class="form-control form-control-sm" [(ngModel)]="attribute.value"
+                             (keyup)="onKeyUpGlobal(gloval.value, attribute.label)">
+                    </div>
+                  </div>
+                </div>
+                <!--            </ng-container>-->
+                <!--            <ng-container *ngIf="selectedTab === 'indian'">-->
+   
+                <!--              <div class="tab" (click)="selectTab('indian')" [class.active]="selectedTab === 'indian'">-->
+                <div class="row my-4">
+                  <div class="col-md-12 text-center">
+                    <b class="font-weight-bold text-primary">Global Level Database Search</b>
+                  </div>
+                </div>
+                <div class="row my-4">
+                  <div class="col-md-8  mx-auto">
+                    <select class="form-control form-control-sm" #seleattrIndian>
+                      <option *ngFor="let attribute of indiaAttributeValue" [value]="attribute.label"
+                              [disabled]="isOptionSelectedIndian(attribute.label)">
+                        {{ attribute.label}}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="col-md-4 mx-auto">
+                    <button [disabled]="this.disableIndianOptionButton" class="btn btn-primary btn-sm"
+                            (click)="addSelectedIndianAttribute(seleattrIndian.value)">Add Global Attribute
+                    </button>
+                  </div>
+                </div>
+                  <div *ngFor="let attribute of selectedIndiaAttributeValue; let i = index;">
+                    <div class="row">
+                      <div class="col-md-6 mx-auto">
+                        <div class="form-group">
+                          <label class="required">{{ attribute.label }}</label>
+                        </div>
+                      </div>
+                      <div class="col-md-6 mx-auto">
+                        <input type="text" #indian
+                               class="form-control form-control-sm" [(ngModel)]="attribute.value"
+                               (keyup)="onKeyUpIndian(indian.value, attribute.label)">
+                      </div>
+                    </div>
+                  </div>
+               
+   
+              <!-- </div> -->
+            <!--            </ng-container>-->
             </div>
           </div>
-          <!--            </ng-container>-->
-        </div>
+          </div>
 
+          
         <div class="row">
           <div class="col-md-12 text-center mt-3 pb-3">
             <button type="button" *ngIf="selectedStatus !== '3'"
@@ -520,6 +553,7 @@
     </form>
   </div>
 </ng-template>
+
 <ng-template #insuffmodalsecoundremarks let-modal>
   <div class="modal-header">
     <h4 class="modal-title" id="modal-basic-title">Edit Remarks</h4>

@@ -1,13 +1,13 @@
-import {ChangeDetectorRef, Component, ElementRef, OnInit, Renderer2, ViewChild} from '@angular/core';
-import {FormBuilder, FormControl, FormGroup, Validators} from '@angular/forms';
-import {Router} from '@angular/router';
-import {ModalDismissReasons, NgbCalendar, NgbDate, NgbDateStruct, NgbModal} from '@ng-bootstrap/ng-bootstrap';
-import {AuthenticationService} from 'src/app/services/authentication.service';
-import {CandidateService} from 'src/app/services/candidate.service';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { FormControl, FormGroup, Validators, FormArray } from '@angular/forms';
+import { Router } from '@angular/router';
+import { ModalDismissReasons, NgbCalendar, NgbDate, NgbDateStruct, NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { AuthenticationService } from 'src/app/services/authentication.service';
+import { CandidateService } from 'src/app/services/candidate.service';
 import Swal from 'sweetalert2';
 
-import {CustomerService} from '../../services/customer.service';
-import {LoaderService} from "../../services/loader.service";
+import { CustomerService } from '../../services/customer.service';
+import { LoaderService } from "../../services/loader.service";
 
 @Component({
   selector: 'app-upload-vendocheck',
@@ -39,8 +39,6 @@ export class UploadVendocheckComponent implements OnInit {
   end_date = "";
   proofDocumentNew: any;
   venderAttributeValue: any[] = [];
-  globalAttributeValue: any[] = [];
-  indiaAttributeValue: any[] = [];
   venderAttributeCheckMapped: any[] = [];
   closeModal: string | undefined;
   filteredData: any[] = [];
@@ -56,7 +54,20 @@ export class UploadVendocheckComponent implements OnInit {
   createdOnDate: any;
   selectedFile: File | null = null;
   isVendorAttributeForm: boolean | undefined;
+  civilProceedingsCount: number = 0;
+  globalAttributeValue: any[] = [];
+  indiaAttributeValue: any[] = [];
+
   activeForm: string = '';
+  selectedGlobalAttributeValue: { label: string; value: string }[] = [];
+  globaldataBaseCheck: any;
+  globalCheckType: string = 'GLOBAL';
+
+  attributeMap: Map<string, any[]> = new Map<string, any[]>();
+  selectedTab: any;
+  selectedIndiaAttributeValue: any[] = [];
+
+
 
   vendorlist = new FormGroup({
     vendorcheckId: new FormControl(''),
@@ -66,23 +77,71 @@ export class UploadVendocheckComponent implements OnInit {
     colorid: new FormControl(''),
     value: new FormControl(''),
     legalProcedings: new FormGroup({
-      civilProceedings: new FormGroup({
-        dateOfSearch: new FormControl('',[Validators.required]),
-        court: new FormControl('',[Validators.required]),
-        jurisdiction: new FormControl('',[Validators.required]),
-        nameOfTheCourt: new FormControl('',[Validators.required]),
-        result: new FormControl('',[Validators.required])
-      }),
-      criminalProceedings: new FormGroup({
-        dateOfSearch: new FormControl('',[Validators.required]),
-        court: new FormControl('',[Validators.required]),
-        jurisdiction: new FormControl('',[Validators.required]),
-        nameOfTheCourt: new FormControl('',[Validators.required]),
-        result: new FormControl('',[Validators.required])
-      })
+      civilProceedingsList: new FormArray([]),
+      criminalProceedingsList: new FormArray([])
     })
   });
 
+  get civilProceedingsList() {
+    return (this.vendorlist.get('legalProcedings.civilProceedingsList') as FormArray).controls;
+
+  }
+
+  get criminalProceedingsList() {
+    return (this.vendorlist.get('legalProcedings.criminalProceedingsList') as FormArray).controls;
+
+  }
+
+
+  addCivilProceeding() {
+    const civilProceedingsArray = this.vendorlist.get('legalProcedings.civilProceedingsList') as FormArray;
+
+    civilProceedingsArray.push(this.createProceedingFormGroup('High Court ', 'All High Courts of India', 'All High Courts of India '));
+    civilProceedingsArray.push(this.createProceedingFormGroup('Civil Court', 'All Civil Court', 'All Civil Court '));
+
+    this.civilProceedingsCount++;
+
+
+    console.log(this.vendorlist.value);
+
+  }
+
+  addCriminalProceeding() {
+    const criminalProceedingsArray = this.vendorlist.get('legalProcedings.criminalProceedingsList') as FormArray;
+
+
+    criminalProceedingsArray.push(this.createCriminalProceedingFormGroup('Session Court', 'All Session Courts', 'All Session Courts'));
+    criminalProceedingsArray.push(this.createCriminalProceedingFormGroup('Magistrate Court', 'All Magistrate Courts', 'All Magistrate courts'));
+
+    this.civilProceedingsCount++;
+
+
+    console.log(this.vendorlist.value);
+
+  }
+
+  createProceedingFormGroup(staticCourt: string, staticJurisdiction: string, staticNameOfTheCourt: string): FormGroup {
+    return new FormGroup({
+      dateOfSearch: new FormControl('', [Validators.required]),
+      court: new FormControl(staticCourt, [Validators.required]),
+      jurisdiction: new FormControl(staticJurisdiction, [Validators.required]),
+      nameOfTheCourt: new FormControl(staticNameOfTheCourt, [Validators.required]),
+      result: new FormControl('', [Validators.required])
+    });
+
+  }
+
+
+  createCriminalProceedingFormGroup(staticCourt: string, staticJurisdiction: string, staticNameOfTheCourt: string): FormGroup {
+    return new FormGroup({
+      dateOfSearch: new FormControl('', [Validators.required]),
+      court: new FormControl(staticCourt, [Validators.required]),
+      jurisdiction: new FormControl(staticJurisdiction, [Validators.required]),
+      nameOfTheCourt: new FormControl(staticNameOfTheCourt, [Validators.required]),
+      result: new FormControl('', [Validators.required])
+    });
+
+  }
 
   utilizationReportFilter = new FormGroup({
     fromDate: new FormControl('', Validators.required),
@@ -113,7 +172,7 @@ export class UploadVendocheckComponent implements OnInit {
       // @ts-ignore
       this.vendorlist.get('value').enable();
     }
-    if (this.selectedStatus === '3') {
+    if (this.selectedStatus == '3') {
       // @ts-ignore
       this.vendorlist.get('legalProcedings').disable();
       // @ts-ignore
@@ -126,12 +185,7 @@ export class UploadVendocheckComponent implements OnInit {
   modeOfVerificationStatus: any = [];
   initToday: any;
 
-
-  selectedGlobalAttributeValue: { label: string; value: string }[] = [];
-  globaldataBaseCheck: any;
-  globalCheckType: string = 'GLOBAL';
-
-  constructor(private candidateService: CandidateService,private fb: FormBuilder,private renderer: Renderer2, private cdr: ChangeDetectorRef, public authService: AuthenticationService, calendar: NgbCalendar, private customers: CustomerService, private _router: Router, private modalService: NgbModal, private loaderService: LoaderService) {
+  constructor(private candidateService: CandidateService, public authService: AuthenticationService, calendar: NgbCalendar, private customers: CustomerService, private _router: Router, private modalService: NgbModal, private loaderService: LoaderService) {
     // this.vendorlist = this.buildForm();
     this.orgID = this.authService.getuserId();
     this.getToday = calendar.getToday();
@@ -150,12 +204,12 @@ export class UploadVendocheckComponent implements OnInit {
     // }
     var checkfromDate: any = localStorage.getItem('dbFromDate');
     let getfromDate = checkfromDate.split('/');
-    this.setfromDate = {day: +getfromDate[0], month: +getfromDate[1], year: +getfromDate[2]};
+    this.setfromDate = { day: +getfromDate[0], month: +getfromDate[1], year: +getfromDate[2] };
 
     var checktoDate: any = localStorage.getItem('dbToDate');
     let gettoDate = checktoDate.split('/');
-    this.settoDate = {day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2]};
-    this.getMinDate = {day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2]};
+    this.settoDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
+    this.getMinDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
     this.utilizationReportFilter.patchValue({
       fromDate: this.setfromDate,
       toDate: this.settoDate
@@ -202,6 +256,10 @@ export class UploadVendocheckComponent implements OnInit {
         this.createdOnDate = this.Dateformatter(data.data.createdOn);
       }
     });
+
+    this.addCivilProceeding();
+    this.addCriminalProceeding();
+
   }
 
   Dateformatter(timestamp: number): NgbDateStruct {
@@ -227,7 +285,7 @@ export class UploadVendocheckComponent implements OnInit {
     let finalDate = day + "/" + month + "/" + year;
     this.fromDate = finalDate;
 
-    this.getMinDate = {day: +day, month: +month, year: +year};
+    this.getMinDate = { day: +day, month: +month, year: +year };
   }
 
   ontoDate(event: any) {
@@ -520,6 +578,7 @@ export class UploadVendocheckComponent implements OnInit {
   triggerModal(content: any, item: any) {
 
     this.isVendorAttributeForm = item.source?.sourceName.includes('CRIMINAL CHECK');
+
     this.globaldataBaseCheck = item.source?.sourceName.includes('GLOBAL DATABASE CHECK');
     if (this.globaldataBaseCheck) {
       if (this.globalCheckType != null) {
@@ -529,10 +588,10 @@ export class UploadVendocheckComponent implements OnInit {
           this.globalAttributeValue = data.data.checkAttibutes.map((attr: any) => {
             return {
               label: attr,
-              value: ""
+              value: "No Records Found"
             };
           });
-          console.log("globalAttributeValue    :" + JSON.stringify(this.globalAttributeValue))
+          console.log("globalAttributeValue :" + JSON.stringify(this.globalAttributeValue))
         });
       }
       if (this.globalCheckType != null) {
@@ -542,10 +601,10 @@ export class UploadVendocheckComponent implements OnInit {
           this.indiaAttributeValue = data.data.checkAttibutes.map((attr: any) => {
             return {
               label: attr,
-              value: ""
+              value: "No Records Found"
             };
           });
-          console.log("indiaAttributeValue    :" + JSON.stringify(this.indiaAttributeValue))
+          console.log("indiaAttributeValue :" + JSON.stringify(this.indiaAttributeValue))
         });
       }
     }
@@ -561,6 +620,7 @@ export class UploadVendocheckComponent implements OnInit {
         });
       });
     }
+
     this.modalService.open(content).result.then((res) => {
       console.log(content, "........................");
       this.closeModal = `Closed with: ${res}`;
@@ -601,22 +661,22 @@ export class UploadVendocheckComponent implements OnInit {
     return item.vendorCheckStatusMaster?.checkStatusCode === 'CLEAR';
   }
 
-  attributeMap: Map<string, any[]> = new Map<string, any[]>();
-
   onSubmit(vendorlist: FormGroup) {
-
     this.isButtonDisabled = true
     let rawValue = vendorlist.getRawValue();
+    // console.log(this.globalAttributeValue)
+    // @ts-ignore
+    this.selectedGlobalAttributeValue.push(...this.globalAttributeValue);
     console.log("global1" + JSON.stringify(this.selectedGlobalAttributeValue))
     this.attributeMap.set('GLOBAL', this.selectedGlobalAttributeValue);
     console.log(JSON.stringify(this.selectedIndiaAttributeValue))
+    this.selectedIndiaAttributeValue.push(...this.indiaAttributeValue);
     this.attributeMap.set('INDIA', this.selectedIndiaAttributeValue);
     console.log(JSON.stringify(this.attributeMap))
     console.log('Attribute Map:', JSON.stringify(Array.from(this.attributeMap.entries())));
     this.patchUserValues();
     console.log(this.vendorlist.value, "----------------------------------------")
     const formData = new FormData();
-
     if (this.globaldataBaseCheck) {
       const mergedData = {
         ...this.venderAttributeCheckMapped,
@@ -631,16 +691,14 @@ export class UploadVendocheckComponent implements OnInit {
         obj[item.label] = item.value;
         return obj;
       }, {});
-
-      //  delete agentAttributeValues.value
-      this.venderAttributeCheckMapped = {...venderAttributeValuesGloble}
+      // delete agentAttributeValues.value
+      this.venderAttributeCheckMapped = { ...venderAttributeValuesGloble }
       console.log(" onSubmit:::", this.venderAttributeCheckMapped);
       console.warn("venderAttributeValues===>", venderAttributeValuesGloble);
       const mergedData = {
         ...this.venderAttributeCheckMapped,
       };
       formData.append('vendorRemarksReport', JSON.stringify(mergedData));
-
     }
 
     formData.append('file', this.proofDocumentNew);
@@ -667,6 +725,7 @@ export class UploadVendocheckComponent implements OnInit {
     // }
     this.isButtonDisabled = false;
   }
+
 
   private getDismissReason(reason: any): string {
     window.location.reload();
@@ -873,10 +932,10 @@ export class UploadVendocheckComponent implements OnInit {
     this.fromDate = this.initToday;
     this.toDate = this.initToday;
     let getfromDate = this.initToday.split('/');
-    this.setfromDate = {day: +getfromDate[0], month: +getfromDate[1], year: +getfromDate[2]};
+    this.setfromDate = { day: +getfromDate[0], month: +getfromDate[1], year: +getfromDate[2] };
     let gettoDate = this.initToday.split('/');
-    this.settoDate = {day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2]};
-    this.getMinDate = {day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2]};
+    this.settoDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
+    this.getMinDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
     this.utilizationReportFilter.patchValue({
       fromDate: this.setfromDate,
       toDate: this.settoDate
@@ -910,10 +969,10 @@ export class UploadVendocheckComponent implements OnInit {
     this.fromDate = finalInputFromDate;
     this.toDate = finalInputToDate;
     let getfromDate = finalInputFromDate.split('/');
-    this.setfromDate = {day: +getfromDate[0], month: +getfromDate[1], year: +getfromDate[2]};
+    this.setfromDate = { day: +getfromDate[0], month: +getfromDate[1], year: +getfromDate[2] };
     let gettoDate = finalInputToDate.split('/');
-    this.settoDate = {day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2]};
-    this.getMinDate = {day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2]};
+    this.settoDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
+    this.getMinDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
     this.utilizationReportFilter.patchValue({
       fromDate: this.setfromDate,
       toDate: this.settoDate
@@ -947,22 +1006,16 @@ export class UploadVendocheckComponent implements OnInit {
     this.fromDate = finalInputFromDate;
     this.toDate = this.initToday;
     let getfromDate = finalInputFromDate.split('/');
-    this.setfromDate = {day: +getfromDate[0], month: +getfromDate[1], year: +getfromDate[2]};
+    this.setfromDate = { day: +getfromDate[0], month: +getfromDate[1], year: +getfromDate[2] };
     let gettoDate = this.initToday.split('/');
-    this.settoDate = {day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2]};
-    this.getMinDate = {day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2]};
+    this.settoDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
+    this.getMinDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
     this.utilizationReportFilter.patchValue({
       fromDate: this.setfromDate,
       toDate: this.settoDate
     });
     this.getUploadVendorCheckData();
   }
-
-  selectedTab:any;
-
-  selectedIndiaAttributeValue: any[] = [];
-
-
 
   selectTab(tabName: string): void {
     this.selectedTab = tabName;
@@ -971,31 +1024,46 @@ export class UploadVendocheckComponent implements OnInit {
   addSelectedIndiaAttribute(selectedIndiaAttr: any) {
     if (selectedIndiaAttr) {
       // Add the selected value to the array
-      this.selectedIndiaAttributeValue.push({label: selectedIndiaAttr, value: ''});
+      this.selectedIndiaAttributeValue.push({ label: selectedIndiaAttr, value: '' });
     }
     console.log("indian attrlist" + JSON.stringify(this.selectedIndiaAttributeValue))
   }
-
   isGlobalValueSelected(label: string): boolean {
     // Check if the value is already selected
     return this.selectedGlobalAttributeValue.some(attribute => attribute.label === label);
   }
-
   isIndianValueSelected(label: string): boolean {
     // Check if the value is already selected
     return this.selectedIndiaAttributeValue.some(attribute => attribute.label === label);
   }
   addSelectedGlobalAttribute(value: string) {
+    const selectedAttribute = this.globalAttributeValue.find(attr => attr.label === value);
+
+    if (selectedAttribute) {
+      // Remove the selected attribute from the globalAttributeValue array
+      const index = this.globalAttributeValue.indexOf(selectedAttribute);
+      if (index !== -1) {
+        this.globalAttributeValue.splice(index, 1);
+      }
+    }
     this.selectedGlobalAttributeValue.push({ label: value, value: '' });
   }
   addSelectedIndianAttribute(value: string) {
+    const selectedIndAttribute = this.globalAttributeValue.find(attr => attr.label === value);
+
+    if (selectedIndAttribute) {
+      // Remove the selected attribute from the globalAttributeValue array
+      const index = this.indiaAttributeValue.indexOf(selectedIndAttribute);
+      if (index !== -1) {
+        this.indiaAttributeValue.splice(index, 1);
+      }
+    }
     this.selectedIndiaAttributeValue.push({ label: value, value: '' });
   }
   onKeyUpGlobal(value: string, label: string): void {
-    debugger
+
     // Find the attribute in the array based on the label
     const foundGlobalAttribute = this.selectedGlobalAttributeValue.find(attr => attr.label === label);
-
     // Update the value if the attribute is found
     if (foundGlobalAttribute) {
       foundGlobalAttribute.value = value;
@@ -1003,7 +1071,7 @@ export class UploadVendocheckComponent implements OnInit {
     console.log(JSON.stringify(foundGlobalAttribute))
   }
   onKeyUpIndian(value: string, label: string): void {
-    debugger
+
     // Find the attribute in the array based on the label
     const foundIndianAttribute = this.selectedIndiaAttributeValue.find(attr => attr.label === label);
     // Update the value if the attribute is found
@@ -1013,16 +1081,16 @@ export class UploadVendocheckComponent implements OnInit {
     console.log(JSON.stringify(foundIndianAttribute))
   }
   // In your component class
-
-  disableIndianOptionButton:any;
-  disableGlobalOptionButton:any;
+  disableIndianOptionButton: any;
+  disableGlobalOptionButton: any;
   isOptionSelectedIndian(label: string): boolean {
-    this.disableIndianOptionButton=this.selectedIndiaAttributeValue.some(attribute => attribute.label === label);
+    this.disableIndianOptionButton = this.selectedIndiaAttributeValue.some(attribute => attribute.label === label);
     return this.disableIndianOptionButton
   }
   isOptionSelectedGlobal(label: string): boolean {
-    this.disableGlobalOptionButton=this.selectedGlobalAttributeValue.some(attribute => attribute.label === label);
+    this.disableGlobalOptionButton = this.selectedGlobalAttributeValue.some(attribute => attribute.label === label);
     return this.disableGlobalOptionButton;
   }
 
 }
+
