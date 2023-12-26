@@ -1188,7 +1188,7 @@ export class UploadVendocheckComponent implements OnInit {
     this.selectedIndiaAttributeValue.push({ label: value, value: '' });
   }
   onKeyUpGlobal(value: string, label: string): void {
-    debugger
+
     // Find the attribute in the array based on the label
     const foundGlobalAttribute = this.selectedGlobalAttributeValue.find(attr => attr.label === label);
     // Update the value if the attribute is found
@@ -1198,7 +1198,7 @@ export class UploadVendocheckComponent implements OnInit {
     console.log(JSON.stringify(foundGlobalAttribute))
   }
   onKeyUpIndian(value: string, label: string): void {
-    debugger
+
     // Find the attribute in the array based on the label
     const foundIndianAttribute = this.selectedIndiaAttributeValue.find(attr => attr.label === label);
     // Update the value if the attribute is found
@@ -1299,7 +1299,7 @@ export class UploadVendocheckComponent implements OnInit {
         window.location.reload();
       });
       pieSeries.slices.template.cursorOverStyle = am4core.MouseCursorStyle.pointer;
-    
+
       var userId:any = localStorage.getItem('userId');
       var fromDate:any = localStorage.getItem('dbFromDate');
       var toDate:any = localStorage.getItem('dbToDate');

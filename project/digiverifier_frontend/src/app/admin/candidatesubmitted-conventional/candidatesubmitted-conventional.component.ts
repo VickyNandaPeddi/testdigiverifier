@@ -626,7 +626,6 @@ export class CandidatesubmittedConventionalComponent implements OnInit {
   }
 
   goToPrevPage(): void {
-debugger
     // this.idvalue=idvalue;
     if (this.currentPageIndex > 0) {
       this.currentPageIndex--;
