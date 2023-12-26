@@ -72,6 +72,18 @@
             <artifactId>logback-classic</artifactId>
             <version>1.2.13</version>
             <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-core</artifactId>
+                </exclusion>
+
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>1.2.13</version>
         </dependency>
 
         <dependency>
@@ -293,8 +305,34 @@
                     <artifactId>aws-java-sdk-core</artifactId>
                     <groupId>com.amazonaws</groupId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>aws-java-sdk-kinesisvideo</artifactId>
+                    <groupId>com.amazonaws</groupId>
+                </exclusion>
             </exclusions>
         </dependency>
+
+        <dependency>
+            <artifactId>aws-java-sdk-kinesisvideo</artifactId>
+            <groupId>com.amazonaws</groupId>
+            <optional>false</optional>
+            <version>1.12.180</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>netty-handler</artifactId>
+                    <groupId>io.netty</groupId>
+                </exclusion>
+
+            </exclusions>
+        </dependency>
+
+<!--        <dependency>-->
+<!--            <artifactId>netty-codec-http</artifactId>-->
+<!--            <groupId>io.netty</groupId>-->
+<!--            <optional>false</optional>-->
+<!--            <version>4.1.79.Final</version>-->
+<!--        </dependency>-->
+
         <dependency>
             <artifactId>aws-java-sdk-billingconductor</artifactId>
             <groupId>com.amazonaws</groupId>
