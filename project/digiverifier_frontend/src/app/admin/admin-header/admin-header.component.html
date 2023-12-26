@@ -55,6 +55,9 @@
         <a class="nav-link" routerLink="BGVverification"><i class="fas fa-chart-line"></i> Dashboard <span
           class="sr-only">(current)</span></a>
       </li>
+      <li class="nav-item" routerLinkActive="active-link" *ngIf="authService.roleMatch(['ROLE_VENDOR'])">
+        <a class="nav-link" routerLink="orgadminDashboard"><i class="fas fa-user-tag"></i> Dashboard</a>
+      </li>
       <li class="nav-item" routerLinkActive="active-link"
           *ngIf="authService.roleMatch(['ROLE_ADMIN','ROLE_PARTNERADMIN','ROLE_AGENTSUPERVISOR'])">
         <a class="nav-link" routerLink="usermgmt"><i class="fas fa-user"></i> User Management</a>
@@ -71,9 +74,9 @@
           *ngIf="authService.roleMatch(['ROLE_ADMIN','ROLE_PARTNERADMIN'])">
         <a class="nav-link" routerLink="test"><i class="fas fa-user-tag"></i> Add Role</a>
       </li> -->
-      <li class="nav-item" routerLinkActive="active-link" *ngIf="authService.roleMatch(['ROLE_VENDOR'])">
+      <!-- <li class="nav-item" routerLinkActive="active-link" *ngIf="authService.roleMatch(['ROLE_VENDOR'])">
         <a class="nav-link" routerLink="uploadvendorcheck"><i class="fas fa-user-tag"></i>Upload Vendor Check</a>
-      </li>
+      </li> -->
       <li class="nav-item dropdown" routerLinkActive="active-link"
           *ngIf="authService.roleMatch(['ROLE_ADMIN']) || CustUtilizationReport_stat || eKycReport_stat">
         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown"
@@ -81,12 +84,12 @@
           <i class="fa fa-list-alt"></i> Reports
         </a>
         <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-          <!-- <a class="dropdown-item" routerLink="customerUtilization" routerLinkActive="activechild"
-             *ngIf="authService.roleMatch(['ROLE_ADMIN']) || CustUtilizationReport_stat">Customer Utilization Report</a>
-          <a class="dropdown-item" routerLink="ekycReport" routerLinkActive="activechild"
+          <a class="dropdown-item" routerLink="customerUtilization" routerLinkActive="customerUtilization"
+             *ngIf="authService.roleMatch(['ROLE_ADMIN']) || CustUtilizationReport_stat">CONVENTIONAL UTILIZATION REPORT</a>
+          <!-- <a class="dropdown-item" routerLink="ekycReport" routerLinkActive="activechild"
              *ngIf="authService.roleMatch(['ROLE_ADMIN']) || eKycReport_stat">e-KYC Report</a> -->
-          <a class="dropdown-item" (click)="displayExcel()" id="utilreport" routerLinkActive="activechild"
-             *ngIf="authService.roleMatch(['ROLE_ADMIN']) || eKycReport_stat">CONVENTIONAL UTILIZATION REPORT</a>
+          <!-- <a class="dropdown-item" (click)="displayExcel()" id="utilreport" routerLink="vendorUtilization"
+             *ngIf="authService.roleMatch(['ROLE_ADMIN']) || eKycReport_stat">CONVENTIONAL UTILIZATION REPORT</a> -->
         </div>
       </li>
     </ul>

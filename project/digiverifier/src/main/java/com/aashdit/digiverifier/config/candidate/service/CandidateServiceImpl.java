@@ -26,6 +26,8 @@ import com.aashdit.digiverifier.config.candidate.util.CSVUtil;
 import com.aashdit.digiverifier.config.candidate.util.ExcelUtil;
 import com.aashdit.digiverifier.config.superadmin.Enum.ReportType;
 import com.aashdit.digiverifier.config.superadmin.dto.DashboardDto;
+import com.aashdit.digiverifier.config.superadmin.dto.ReportResponseDto;
+import com.aashdit.digiverifier.config.superadmin.dto.ReportSearchDto;
 import com.aashdit.digiverifier.config.superadmin.model.Color;
 import com.aashdit.digiverifier.config.superadmin.repository.*;
 import com.aashdit.digiverifier.config.superadmin.service.ReportService;
@@ -878,7 +880,7 @@ public class CandidateServiceImpl<T> implements CandidateService, MessageSourceA
                         candidateCafAddress.setPinCode(Integer.parseInt(candid.getString("PinCode")));
                         candidateCafAddress.setCity(candid.getString("City"));
                         candidateCafAddress.setCreatedOn(new Date());
-                        candidateCafAddress.setCandidateAddress(candid.getString("HouseNumber") + "," + candid.getString("StreetAddress") + "," + candid.getString("City") + "," + candid.getString("State") + "" + candid.getString("Country") + "," + candid.getString("ProminentLandmark"));
+                        candidateCafAddress.setCandidateAddress(candid.getString("HouseNumber") + "," + candid.getString("StreetAddress") + "," + candid.getString("City") + "," + candid.getString("State") + "," + candid.getString("Country") + "," + candid.getString("ProminentLandmark")+""+candid.getString("PinCode"));
                         CandidateCafAddress saveCandidateCafAddress = candidateCafAddressRepository.save(candidateCafAddress);
                         //setting the other fields not present in candidateaddress table to conventional caniddateaddress
                         ConventionalCafAddress conventionalCafAddress = new ConventionalCafAddress();
@@ -998,6 +1000,8 @@ public class CandidateServiceImpl<T> implements CandidateService, MessageSourceA
                         candidateCafEducation.setYearOfPassing(candid.getString("MonthYearOfPassing"));
                         QualificationMaster bebtech = qualificationMasterRepository.findByQualificationCode("BEBTECH");
                         candidateCafEducation.setQualificationMaster(bebtech);
+                        candidateCafEducation.setQualificationType(candid.getString("QualificationType"));
+                        candidateCafEducation.setCountry(candid.getString("Country"));
                         CandidateStatus candidateStatus = new CandidateStatus();
                         candidateStatus.setCandidate(byConventionalCandidateId);
                         candidateStatus.setCreatedBy(user);
@@ -1048,7 +1052,8 @@ public class CandidateServiceImpl<T> implements CandidateService, MessageSourceA
                         CandidateStatus save = candidateStatusRepository.save(candidateStatus);
                         candidateCafEducation.setCandidateStatus(save);
                         candidateCafEducation.setCreatedOn(new Date());
-
+                        candidateCafEducation.setQualificationType(candid.getString("QualificationType"));
+                        candidateCafEducation.setCountry(candid.getString("Country"));
                         CandidateCafEducation savedcafEducation = candidateCafEducationRepository.save(candidateCafEducation);
                         //setting the other fields not present in candidateaddress table to conventional caniddateaddress
                         ConventionalCandidateCafEducation conventionalCandidateCafEducation = new ConventionalCandidateCafEducation();
@@ -1436,85 +1441,85 @@ public class CandidateServiceImpl<T> implements CandidateService, MessageSourceA
         String strToDate = "";
         String strFromDate = "";
         try {
-            if (dashboardDto.getUserId() != null && dashboardDto.getUserId() != 0l && StringUtils.isNotBlank(dashboardDto.getStatus())) {
-                User user = userRepository.findById(dashboardDto.getUserId()).get();
-                strToDate = dashboardDto.getToDate() != null ? dashboardDto.getToDate() : ApplicationDateUtils.getStringTodayAsDDMMYYYY();
-                strFromDate = dashboardDto.getFromDate() != null ? dashboardDto.getFromDate() : ApplicationDateUtils.subtractNoOfDaysFromDateAsDDMMYYYY(new SimpleDateFormat("dd/MM/yyyy").parse(strToDate), 7);
-                Date startDate = formatter.parse(strFromDate + " 00:00:00");
-                Date endDate = formatter.parse(strToDate + " 23:59:59");
-                String status = dashboardDto.getStatus();
-                if (status.equals("INTERIMREPORT")) {
-                    status = "PENDINGAPPROVAL";
-                    statusCodes.add(0, status);
-                } else if (status.equals("CAFPENDING")) {
-                    status = "RELATIVEADDRESS";
-                    statusCodes.add(0, status);
-                } else if (status.equals("EPFOSKIPPED")) {
-                    Collections.addAll(statusCodes, "ITR", "DIGILOCKER");
-                } else if (status.equals("NEWUPLOAD")) {
-                    statusCodes.addAll(statusMasterRepository.findAll().parallelStream().map(x -> x.getStatusCode()).collect(Collectors.toList()));
-                } else {
-                    statusCodes.add(0, status);
-                }
-                List<StatusMaster> statusMasterList = statusMasterRepository.findByStatusCodeIn(statusCodes);
-                List<Long> statusIds = statusMasterList.stream().map(x -> x.getStatusMasterId()).collect(Collectors.toList());
-                if (user.getRole().getRoleCode().equalsIgnoreCase("ROLE_ADMIN") || user.getRole().getRoleCode().equalsIgnoreCase("ROLE_PARTNERADMIN")) {
-                    candidateList = candidateRepository.getCandidateListByOrganizationIdAndStatusAndLastUpdated(user.getOrganization().getOrganizationId(), statusIds, startDate, endDate);
-                }
-                if (user.getRole().getRoleCode().equalsIgnoreCase("ROLE_AGENTSUPERVISOR") || user.getRole().getRoleCode().equalsIgnoreCase("ROLE_AGENTHR")) {
-                    List<User> agentList = userRepository.findAllByAgentSupervisorUserId(user.getUserId());
-                    if (!agentList.isEmpty()) {
-                        agentIds = agentList.stream().map(x -> x.getUserId()).collect(Collectors.toList());
-                    }
-                    agentIds.add(user.getUserId());
-                    candidateList = candidateRepository.getCandidateListByUserIdAndStatusAndLastUpdated(agentIds, statusIds, startDate, endDate);
-                }
-                if (dashboardDto.getStatus().equals("EPFOSKIPPED")) {
-                    candidateList = candidateList.parallelStream().filter(x -> x.getIsUanSkipped()).collect(Collectors.toList());
-                }
-                if (dashboardDto.getStatus().equals("DIGILOCKER") || dashboardDto.getStatus().equals("ITR")) {
-                    candidateList = candidateList.parallelStream().filter(x -> x.getIsUanSkipped() != null ? !x.getIsUanSkipped() : true).collect(Collectors.toList());
-                }
-                for (Candidate candidate : candidateList) {
-                    CandidateDetailsDto candidateDto = this.modelMapper.map(candidate, CandidateDetailsDto.class);
-                    candidateDto.setCreatedOn(formatter.format(candidate.getCreatedOn()));
-                    candidateDto.setSubmittedOn(candidate.getSubmittedOn() != null ? formatter.format(candidate.getSubmittedOn()) : null);
-                    CandidateEmailStatus candidateEmailStatus = candidateEmailStatusRepository.findByCandidateCandidateCode(candidate.getCandidateCode());
-                    if (candidateEmailStatus != null) {
-                        candidateDto.setDateOfEmailInvite(candidateEmailStatus.getDateOfEmailInvite() != null ? formatter.format(candidateEmailStatus.getDateOfEmailInvite()) : null);
-                        candidateDto.setDateOfEmailFailure(candidateEmailStatus.getDateOfEmailFailure() != null ? formatter.format(candidateEmailStatus.getDateOfEmailFailure()) : null);
-                        candidateDto.setDateOfEmailExpire(candidateEmailStatus.getDateOfEmailExpire() != null ? formatter.format(candidateEmailStatus.getDateOfEmailExpire()) : null);
-                        candidateDto.setDateOfEmailReInvite(candidateEmailStatus.getDateOfEmailReInvite() != null ? formatter.format(candidateEmailStatus.getDateOfEmailReInvite()) : null);
-                    }
-                    CandidateStatus candidateStatus = candidateStatusRepository.findByCandidateCandidateCode(candidate.getCandidateCode());
-                    Boolean uan = candidate.getIsUanSkipped() != null ? candidate.getIsUanSkipped() : false;
-                    if (candidateStatus.getStatusMaster().getStatusCode().equals("DIGILOCKER") && uan || candidateStatus.getStatusMaster().getStatusCode().equals("ITR") && uan) {
-                        candidateDto.setCandidateStatusName("EPFO Skipped");
-                    } else {
-                        candidateDto.setCandidateStatusName(candidateStatus.getStatusMaster().getStatusName());
-                    }
-                    List<ContentDTO> contentDTOList = contentService.getContentListByCandidateId(candidate.getCandidateId());
-                    candidateDto.setContentDTOList(contentDTOList);
-
-                    candidateDtoList.add(candidateDto);
-
-                }
-                DashboardDto dashboardDtoObj = new DashboardDto(strFromDate, strToDate, null, null, null, dashboardDto.getUserId(), dashboardDto.getStatus(), candidateDtoList);
-                if (!candidateDtoList.isEmpty()) {
-                    svcSearchResult.setData(dashboardDtoObj);
-                    svcSearchResult.setOutcome(true);
-                    svcSearchResult.setMessage("Candidate list fetched successfully.");
-                    svcSearchResult.setStatus(status);
-                } else {
-                    svcSearchResult.setData(null);
-                    svcSearchResult.setOutcome(false);
-                    svcSearchResult.setMessage("NO Candidate FOUND");
-                }
-            } else {
-                svcSearchResult.setData(null);
-                svcSearchResult.setOutcome(false);
-                svcSearchResult.setMessage("please specify user.");
-            }
+//            if (dashboardDto.getUserId() != null && dashboardDto.getUserId() != 0l && StringUtils.isNotBlank(dashboardDto.getStatus())) {
+//                User user = userRepository.findById(dashboardDto.getUserId()).get();
+//                strToDate = dashboardDto.getToDate() != null ? dashboardDto.getToDate() : ApplicationDateUtils.getStringTodayAsDDMMYYYY();
+//                strFromDate = dashboardDto.getFromDate() != null ? dashboardDto.getFromDate() : ApplicationDateUtils.subtractNoOfDaysFromDateAsDDMMYYYY(new SimpleDateFormat("dd/MM/yyyy").parse(strToDate), 7);
+//                Date startDate = formatter.parse(strFromDate + " 00:00:00");
+//                Date endDate = formatter.parse(strToDate + " 23:59:59");
+//                String status = dashboardDto.getStatus();
+//                if (status.equals("INTERIMREPORT")) {
+//                    status = "PENDINGAPPROVAL";
+//                    statusCodes.add(0, status);
+//                } else if (status.equals("CAFPENDING")) {
+//                    status = "RELATIVEADDRESS";
+//                    statusCodes.add(0, status);
+//                } else if (status.equals("EPFOSKIPPED")) {
+//                    Collections.addAll(statusCodes, "ITR", "DIGILOCKER");
+//                } else if (status.equals("NEWUPLOAD")) {
+//                    statusCodes.addAll(statusMasterRepository.findAll().parallelStream().map(x -> x.getStatusCode()).collect(Collectors.toList()));
+//                } else {
+//                    statusCodes.add(0, status);
+//                }
+//                List<StatusMaster> statusMasterList = statusMasterRepository.findByStatusCodeIn(statusCodes);
+//                List<Long> statusIds = statusMasterList.stream().map(x -> x.getStatusMasterId()).collect(Collectors.toList());
+//                if (user.getRole().getRoleCode().equalsIgnoreCase("ROLE_ADMIN") || user.getRole().getRoleCode().equalsIgnoreCase("ROLE_PARTNERADMIN")) {
+//                    candidateList = candidateRepository.getCandidateListByOrganizationIdAndStatusAndLastUpdated(user.getOrganization().getOrganizationId(), statusIds, startDate, endDate);
+//                }
+//                if (user.getRole().getRoleCode().equalsIgnoreCase("ROLE_AGENTSUPERVISOR") || user.getRole().getRoleCode().equalsIgnoreCase("ROLE_AGENTHR")) {
+//                    List<User> agentList = userRepository.findAllByAgentSupervisorUserId(user.getUserId());
+//                    if (!agentList.isEmpty()) {
+//                        agentIds = agentList.stream().map(x -> x.getUserId()).collect(Collectors.toList());
+//                    }
+//                    agentIds.add(user.getUserId());
+//                    candidateList = candidateRepository.getCandidateListByUserIdAndStatusAndLastUpdated(agentIds, statusIds, startDate, endDate);
+//                }
+//                if (dashboardDto.getStatus().equals("EPFOSKIPPED")) {
+//                    candidateList = candidateList.parallelStream().filter(x -> x.getIsUanSkipped()).collect(Collectors.toList());
+//                }
+//                if (dashboardDto.getStatus().equals("DIGILOCKER") || dashboardDto.getStatus().equals("ITR")) {
+//                    candidateList = candidateList.parallelStream().filter(x -> x.getIsUanSkipped() != null ? !x.getIsUanSkipped() : true).collect(Collectors.toList());
+//                }
+//                for (Candidate candidate : candidateList) {
+//                    CandidateDetailsDto candidateDto = this.modelMapper.map(candidate, CandidateDetailsDto.class);
+//                    candidateDto.setCreatedOn(formatter.format(candidate.getCreatedOn()));
+//                    candidateDto.setSubmittedOn(candidate.getSubmittedOn() != null ? formatter.format(candidate.getSubmittedOn()) : null);
+//                    CandidateEmailStatus candidateEmailStatus = candidateEmailStatusRepository.findByCandidateCandidateCode(candidate.getCandidateCode());
+//                    if (candidateEmailStatus != null) {
+//                        candidateDto.setDateOfEmailInvite(candidateEmailStatus.getDateOfEmailInvite() != null ? formatter.format(candidateEmailStatus.getDateOfEmailInvite()) : null);
+//                        candidateDto.setDateOfEmailFailure(candidateEmailStatus.getDateOfEmailFailure() != null ? formatter.format(candidateEmailStatus.getDateOfEmailFailure()) : null);
+//                        candidateDto.setDateOfEmailExpire(candidateEmailStatus.getDateOfEmailExpire() != null ? formatter.format(candidateEmailStatus.getDateOfEmailExpire()) : null);
+//                        candidateDto.setDateOfEmailReInvite(candidateEmailStatus.getDateOfEmailReInvite() != null ? formatter.format(candidateEmailStatus.getDateOfEmailReInvite()) : null);
+//                    }
+//                    CandidateStatus candidateStatus = candidateStatusRepository.findByCandidateCandidateCode(candidate.getCandidateCode());
+//                    Boolean uan = candidate.getIsUanSkipped() != null ? candidate.getIsUanSkipped() : false;
+//                    if (candidateStatus.getStatusMaster().getStatusCode().equals("DIGILOCKER") && uan || candidateStatus.getStatusMaster().getStatusCode().equals("ITR") && uan) {
+//                        candidateDto.setCandidateStatusName("EPFO Skipped");
+//                    } else {
+//                        candidateDto.setCandidateStatusName(candidateStatus.getStatusMaster().getStatusName());
+//                    }
+//                    List<ContentDTO> contentDTOList = contentService.getContentListByCandidateId(candidate.getCandidateId());
+//                    candidateDto.setContentDTOList(contentDTOList);
+//
+//                    candidateDtoList.add(candidateDto);
+//
+//                }
+//                DashboardDto dashboardDtoObj = new DashboardDto(strFromDate, strToDate, null, null, null, dashboardDto.getUserId(), dashboardDto.getStatus(), candidateDtoList);
+//                if (!candidateDtoList.isEmpty()) {
+//                    svcSearchResult.setData(dashboardDtoObj);
+//                    svcSearchResult.setOutcome(true);
+//                    svcSearchResult.setMessage("Candidate list fetched successfully.");
+//                    svcSearchResult.setStatus(status);
+//                } else {
+//                    svcSearchResult.setData(null);
+//                    svcSearchResult.setOutcome(false);
+//                    svcSearchResult.setMessage("NO Candidate FOUND");
+//                }
+//            } else {
+//                svcSearchResult.setData(null);
+//                svcSearchResult.setOutcome(false);
+//                svcSearchResult.setMessage("please specify user.");
+//            }
         } catch (Exception ex) {
             log.error("Exception occured in getAllCandidateList method in CandidateServiceImpl-->", ex);
             svcSearchResult.setData(null);
@@ -2008,7 +2013,7 @@ public class CandidateServiceImpl<T> implements CandidateService, MessageSourceA
 //			}
 //			else {
             candidateCafEducation.setBoardOrUniversityName(candidateCafEducationDto.getBoardOrUniversityName());
-            candidateCafEducation.setCourseName(candidateCafEducationDto.getCourseName());
+//            candidateCafEducation.setCourseName(candidateCafEducationDto.getCourseName());
             candidateCafEducation.setColor(colorRepository.findByColorCode("AMBER"));
             candidateCafEducation.setRemarkMaster(remarkMasterRepository.findByRemarkCode("ALL"));
 //			}
@@ -2392,7 +2397,7 @@ public class CandidateServiceImpl<T> implements CandidateService, MessageSourceA
                     if (qualificationMasterobj.isPresent()) {
                         QualificationMaster qualificationMasterobj1 = qualificationMasterobj.get();
                         String qualificationName = qualificationMasterobj1.getQualificationName();
-                        candidateCafEducationobj.setCourseName(qualificationName);
+//                        candidateCafEducationobj.setCourseName(qualificationName);
                     }
                     candidateCafEducationobj.setSchoolOrCollegeName(approvalStatusRemarkDto.getSchoolOrCollegeName());
                     candidateCafEducationobj.setBoardOrUniversityName(approvalStatusRemarkDto.getBoardOrUniversityName());
@@ -2425,7 +2430,7 @@ public class CandidateServiceImpl<T> implements CandidateService, MessageSourceA
                 if (qualificationMasterobj.isPresent()) {
                     QualificationMaster qualificationMasterobj1 = qualificationMasterobj.get();
                     String qualificationName = qualificationMasterobj1.getQualificationName();
-                    candidateCafEducation.setCourseName(qualificationName);
+//                    candidateCafEducation.setCourseName(qualificationName);
                 }
 
                 BeanUtils.copyProperties(approvalStatusRemarkDto, candidateCafEducation);
@@ -4203,19 +4208,24 @@ public class CandidateServiceImpl<T> implements CandidateService, MessageSourceA
             if (dashboardDto.getUserId() != null && dashboardDto.getUserId() != 0l) {
                 strToDate = dashboardDto.getToDate() != null ? dashboardDto.getToDate() : ApplicationDateUtils.getStringTodayAsDDMMYYYY();
                 strFromDate = dashboardDto.getFromDate() != null ? dashboardDto.getFromDate() : ApplicationDateUtils.subtractNoOfDaysFromDateAsDDMMYYYY(new SimpleDateFormat("dd/MM/yyyy").parse(strToDate), 7);
-                ServiceOutcome<List<ConventionalVendorCandidatesSubmitted>> svcOutCome = getCandidateRequestList(strToDate, strFromDate, dashboardDto.getUserId());
-                candidatesSubmittedList = svcOutCome.getData();
-                List<ConventionalVendorCandidatesSubmitted> inProgressList = candidatesSubmittedList != null ? candidatesSubmittedList.stream().filter(c -> c.getStatus().getStatusCode().equalsIgnoreCase("INPROGRESS")).collect(Collectors.toList()) : null;
-                List<ConventionalVendorCandidatesSubmitted> newUpload = candidatesSubmittedList != null ? candidatesSubmittedList.stream().filter(c -> c.getStatus().getStatusCode().equalsIgnoreCase("NEWUPLOAD")).collect(Collectors.toList()) : null;
-                List<ConventionalVendorCandidatesSubmitted> qcPending = candidatesSubmittedList != null ? candidatesSubmittedList.stream().filter(c -> c.getStatus().getStatusMasterId() != 1l && c.getStatus().getStatusMasterId() != 15l && c.getStatus().getStatusMasterId() != 13l && c.getStatus().getStatusMasterId() != 8l).collect(Collectors.toList()) : null;
-                List<ConventionalVendorCandidatesSubmitted> stopBgvList = candidatesSubmittedList != null ? candidatesSubmittedList.stream().filter(c -> c.getStopCheckRecivedDate() != null).collect(Collectors.toList()) : null;
-                List<ConventionalVendorCandidatesSubmitted> fastTrackList = candidatesSubmittedList != null
-                        ? candidatesSubmittedList.stream().filter(c -> c.getFastTrack() != null && c.getFastTrack().equalsIgnoreCase("yes")).collect(Collectors.toList()) : null;
-                candidateStatusCountDtoList.add(0, new CandidateStatusCountDto(statusMasterRepository.findByStatusCode("NEWUPLOAD").getStatusName(), statusMasterRepository.findByStatusCode("NEWUPLOAD").getStatusCode(), newUpload != null ? candidatesSubmittedList.size() : 0));
-                candidateStatusCountDtoList.add(1, new CandidateStatusCountDto(statusMasterRepository.findByStatusCode("INPROGRESS").getStatusName(), statusMasterRepository.findByStatusCode("INPROGRESS").getStatusCode(), inProgressList != null ? inProgressList.size() : 0));
-                candidateStatusCountDtoList.add(2, new CandidateStatusCountDto(statusMasterRepository.findByStatusCode("PENDINGAPPROVAL").getStatusName(), statusMasterRepository.findByStatusCode("PENDINGAPPROVAL").getStatusCode(), qcPending != null ? qcPending.size() : 0));
-                candidateStatusCountDtoList.add(3, new CandidateStatusCountDto("STOPBGV", "STOPBGV", stopBgvList != null ? stopBgvList.size() : 0));
-                candidateStatusCountDtoList.add(4, new CandidateStatusCountDto("FASTTRACK", "FASTTRACK", fastTrackList != null ? fastTrackList.size() : 0));
+                Date startDate = formatter.parse(strFromDate + " 00:00:00");
+                Date endDate = formatter.parse(strToDate + " 23:59:59");
+                candidateStatusCountDtoList.add(0, new CandidateStatusCountDto(statusMasterRepository.findByStatusCode("NEWUPLOAD").getStatusName(),
+                        statusMasterRepository.findByStatusCode("NEWUPLOAD").getStatusCode(),
+                        conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRange(startDate, endDate)));
+
+                candidateStatusCountDtoList.add(1, new CandidateStatusCountDto(statusMasterRepository.findByStatusCode("INPROGRESS").getStatusName(),
+                        statusMasterRepository.findByStatusCode("INPROGRESS").getStatusCode(),
+                        conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRangeCount(statusMasterRepository.findByStatusCode("INPROGRESS").getStatusCode(), startDate, endDate)));
+                candidateStatusCountDtoList.add(2, new CandidateStatusCountDto(statusMasterRepository.findByStatusCode("PENDINGAPPROVAL").getStatusName(),
+                        statusMasterRepository.findByStatusCode("PENDINGAPPROVAL").getStatusCode(),
+                        conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRangeCount(statusMasterRepository.findByStatusCode("PENDINGAPPROVAL").getStatusCode(), startDate, endDate)));
+                candidateStatusCountDtoList.add(3, new CandidateStatusCountDto("STOPBGV",
+                        "STOPBGV",
+                        conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRangeForStopBgv(startDate, endDate)));
+                candidateStatusCountDtoList.add(4, new CandidateStatusCountDto("FASTTRACK",
+                        "FASTTRACK",
+                        conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRangeForFastTrack(startDate, endDate)));
                 DashboardDto dashboardDtoObj = new DashboardDto(strFromDate, strToDate, null, null, candidateStatusCountDtoList, dashboardDto.getUserId(), null, null);
                 svcSearchResult.setData(dashboardDtoObj);
                 svcSearchResult.setOutcome(true);
@@ -4245,12 +4255,13 @@ public class CandidateServiceImpl<T> implements CandidateService, MessageSourceA
             if (dashboardDto.getUserId() != null && dashboardDto.getUserId() != 0l) {
                 strToDate = dashboardDto.getToDate() != null ? dashboardDto.getToDate() : ApplicationDateUtils.getStringTodayAsDDMMYYYY();
                 strFromDate = dashboardDto.getFromDate() != null ? dashboardDto.getFromDate() : ApplicationDateUtils.subtractNoOfDaysFromDateAsDDMMYYYY(new SimpleDateFormat("dd/MM/yyyy").parse(strToDate), 7);
-                ServiceOutcome<List<ConventionalVendorCandidatesSubmitted>> svcOutCome = getCandidateRequestList(strToDate, strFromDate, dashboardDto.getUserId());
-                candidatesSubmittedList = svcOutCome.getData();
-                List<ConventionalVendorCandidatesSubmitted> interimList = candidatesSubmittedList != null ? candidatesSubmittedList.stream().filter(c -> c.getStatus().getStatusCode().equalsIgnoreCase("INTERIMREPORT")).collect(Collectors.toList()) : null;
-                List<ConventionalVendorCandidatesSubmitted> finalList = candidatesSubmittedList != null ? candidatesSubmittedList.stream().filter(c -> c.getStatus().getStatusCode().equalsIgnoreCase("FINALREPORT")).collect(Collectors.toList()) : null;
-                candidateStatusCountDtoList.add(0, new CandidateStatusCountDto(statusMasterRepository.findByStatusCode("INTERIMREPORT").getStatusName(), statusMasterRepository.findByStatusCode("INTERIMREPORT").getStatusCode(), interimList != null ? interimList.size() : 0));
-                candidateStatusCountDtoList.add(1, new CandidateStatusCountDto(statusMasterRepository.findByStatusCode("FINALREPORT").getStatusName(), statusMasterRepository.findByStatusCode("FINALREPORT").getStatusCode(), finalList != null ? finalList.size() : 0));
+                Date startDate = formatter.parse(strFromDate + " 00:00:00");
+                Date endDate = formatter.parse(strToDate + " 23:59:59");
+                candidateStatusCountDtoList.add(0, new CandidateStatusCountDto(statusMasterRepository.findByStatusCode("INTERIMREPORT").getStatusName(),
+                        statusMasterRepository.findByStatusCode("INTERIMREPORT").getStatusCode(),
+                        conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRangeCount(statusMasterRepository.findByStatusCode("INTERIMREPORT").getStatusCode(), startDate, endDate)));
+                candidateStatusCountDtoList.add(1, new CandidateStatusCountDto(statusMasterRepository.findByStatusCode("FINALREPORT").getStatusName(), statusMasterRepository.findByStatusCode("FINALREPORT").getStatusCode(),
+                        conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRangeCount(statusMasterRepository.findByStatusCode("FINALREPORT").getStatusCode(), startDate, endDate)));
                 DashboardDto dashboardDtoObj = new DashboardDto(strFromDate, strToDate, null, null, candidateStatusCountDtoList, dashboardDto.getUserId(), null, null);
                 svcSearchResult.setData(dashboardDtoObj);
                 svcSearchResult.setOutcome(true);
@@ -4270,44 +4281,44 @@ public class CandidateServiceImpl<T> implements CandidateService, MessageSourceA
     }
 
 
-    public ServiceOutcome<List<ConventionalVendorCandidatesSubmitted>> getCandidateRequestList(String
-                                                                                                       strToDate, String strFromDate, Long userId) {
-        ServiceOutcome<List<ConventionalVendorCandidatesSubmitted>> svcSearchResult = new ServiceOutcome<List<ConventionalVendorCandidatesSubmitted>>();
-//        List<CandidateStatus> candidateStatusList = new ArrayList<CandidateStatus>();
-        List<ConventionalVendorCandidatesSubmitted> candidatesSubmittedList = new ArrayList<ConventionalVendorCandidatesSubmitted>();
-
-        List<Long> agentIds = new ArrayList<Long>();
-        try {
-            Date startDate = formatter.parse(strFromDate + " 00:00:00");
-            Date endDate = formatter.parse(strToDate + " 23:59:59");
-            User user = userRepository.findById(userId).get();
-            if (user.getRole().getRoleCode().equalsIgnoreCase("ROLE_ADMIN") || user.getRole().getRoleCode().equalsIgnoreCase("ROLE_PARTNERADMIN")) {
-//                candidateStatusList = candidateStatusRepository.findAllByCandidateOrganizationOrganizationIdAndLastUpdatedOnBetween(user.getOrganization().getOrganizationId(), startDate, endDate);
-                candidatesSubmittedList = conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRange(startDate, endDate);
-            }
-            if (user.getRole().getRoleCode().equalsIgnoreCase("ROLE_AGENTSUPERVISOR") || user.getRole().getRoleCode().equalsIgnoreCase("ROLE_AGENTHR")) {
-                List<User> agentList = userRepository.findAllByAgentSupervisorUserId(user.getUserId());
-                if (!agentList.isEmpty()) {
-                    agentIds = agentList.stream().map(x -> x.getUserId()).collect(Collectors.toList());
-                }
-                agentIds.add(user.getUserId());
-                candidatesSubmittedList = conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRange(startDate, endDate);
-            }
-            if (candidatesSubmittedList.isEmpty() == true) {
-                svcSearchResult.setData(new ArrayList<ConventionalVendorCandidatesSubmitted>());
-            } else {
-                svcSearchResult.setData(candidatesSubmittedList);
-            }
-            svcSearchResult.setOutcome(true);
-            svcSearchResult.setMessage(messageSource.getMessage("msg.success", null, LocaleContextHolder.getLocale()));
-        } catch (Exception ex) {
-            log.error("Exception occured in getCandidateStatusList method in CandidateServiceImpl-->", ex);
-            svcSearchResult.setData(null);
-            svcSearchResult.setOutcome(false);
-            svcSearchResult.setMessage(messageSource.getMessage("ERROR.MESSAGE", null, LocaleContextHolder.getLocale()));
-        }
-        return svcSearchResult;
-    }
+//    public ServiceOutcome<List<ConventionalVendorCandidatesSubmitted>> getCandidateRequestList(String
+//                                                                                                       strToDate, String strFromDate, Long userId) {
+//        ServiceOutcome<List<ConventionalVendorCandidatesSubmitted>> svcSearchResult = new ServiceOutcome<List<ConventionalVendorCandidatesSubmitted>>();
+////        List<CandidateStatus> candidateStatusList = new ArrayList<CandidateStatus>();
+//        List<ConventionalVendorCandidatesSubmitted> candidatesSubmittedList = new ArrayList<ConventionalVendorCandidatesSubmitted>();
+//
+//        List<Long> agentIds = new ArrayList<Long>();
+//        try {
+//            Date startDate = formatter.parse(strFromDate + " 00:00:00");
+//            Date endDate = formatter.parse(strToDate + " 23:59:59");
+//            User user = userRepository.findById(userId).get();
+//            if (user.getRole().getRoleCode().equalsIgnoreCase("ROLE_ADMIN") || user.getRole().getRoleCode().equalsIgnoreCase("ROLE_PARTNERADMIN")) {
+////                candidateStatusList = candidateStatusRepository.findAllByCandidateOrganizationOrganizationIdAndLastUpdatedOnBetween(user.getOrganization().getOrganizationId(), startDate, endDate);
+//                candidatesSubmittedList = conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRange(startDate, endDate);
+//            }
+//            if (user.getRole().getRoleCode().equalsIgnoreCase("ROLE_AGENTSUPERVISOR") || user.getRole().getRoleCode().equalsIgnoreCase("ROLE_AGENTHR")) {
+//                List<User> agentList = userRepository.findAllByAgentSupervisorUserId(user.getUserId());
+//                if (!agentList.isEmpty()) {
+//                    agentIds = agentList.stream().map(x -> x.getUserId()).collect(Collectors.toList());
+//                }
+//                agentIds.add(user.getUserId());
+//                candidatesSubmittedList = conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRange(startDate, endDate);
+//            }
+//            if (candidatesSubmittedList.isEmpty() == true) {
+//                svcSearchResult.setData(new ArrayList<ConventionalVendorCandidatesSubmitted>());
+//            } else {
+//                svcSearchResult.setData(candidatesSubmittedList);
+//            }
+//            svcSearchResult.setOutcome(true);
+//            svcSearchResult.setMessage(messageSource.getMessage("msg.success", null, LocaleContextHolder.getLocale()));
+//        } catch (Exception ex) {
+//            log.error("Exception occured in getCandidateStatusList method in CandidateServiceImpl-->", ex);
+//            svcSearchResult.setData(null);
+//            svcSearchResult.setOutcome(false);
+//            svcSearchResult.setMessage(messageSource.getMessage("ERROR.MESSAGE", null, LocaleContextHolder.getLocale()));
+//        }
+//        return svcSearchResult;
+//    }
 
     @Autowired
     ConventionalCandidatesSubmittedRepository conventionalCandidatesSubmittedRepository;
@@ -4352,6 +4363,103 @@ public class CandidateServiceImpl<T> implements CandidateService, MessageSourceA
         }
 
         return conventionalCandidateOutcome;
+    }
+    
+    public ServiceOutcome<DashboardDto> findConVendorStatusCount(DashboardDto dashboardDto) {
+
+        ServiceOutcome<DashboardDto> svcSearchResult = new ServiceOutcome<DashboardDto>();
+        List<CandidateStatusCountDto> candidateStatusCountDtoList = new ArrayList<CandidateStatusCountDto>();
+        String strToDate = "";
+        String strFromDate = "";
+        List<Object[]> resultList = null;
+		StringBuilder query = new StringBuilder();
+		SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+
+        try {
+            if (dashboardDto.getUserId() != null && dashboardDto.getUserId() != 0l) {
+				if (dashboardDto.getFromDate().isEmpty() || dashboardDto.getToDate().isEmpty()) {
+					strToDate = ApplicationDateUtils.getStringTodayAsDDMMYYYY();
+					strFromDate = ApplicationDateUtils
+							.subtractNoOfDaysFromDateAsDDMMYYYY(new SimpleDateFormat("dd/MM/yyyy").parse(strToDate), 7);
+				} else {
+					strFromDate = dashboardDto.getFromDate();
+					strToDate = dashboardDto.getToDate();
+				}
+				
+				Date startDate = format.parse(strFromDate + " 00:00:00");
+				Date endDate = format.parse(strToDate + " 23:59:59");
+				
+//                strToDate = dashboardDto.getToDate() != null ? dashboardDto.getToDate() : ApplicationDateUtils.getStringTodayAsDDMMYYYY();
+//                strFromDate = dashboardDto.getFromDate() != null ? dashboardDto.getFromDate() : ApplicationDateUtils.subtractNoOfDaysFromDateAsDDMMYYYY(new SimpleDateFormat("dd/MM/yyyy").parse(strToDate), 7);
+
+//				query.append(
+//						"select \r\n"
+//						+ "  COUNT(CASE WHEN vcm.vendor_checkstatus_master_id = 1 THEN 1 END) AS clearcount,\r\n"
+//						+ "  COUNT(CASE WHEN vcm.vendor_checkstatus_master_id = 3 THEN 1 END) AS insufficientcount,\r\n"
+//						+ "  COUNT(CASE WHEN vcm.vendor_checkstatus_master_id = 4 THEN 1 END) AS majordiscrepancycount,\r\n"
+//						+ "  COUNT(CASE WHEN vcm.vendor_checkstatus_master_id = 5 THEN 1 END) AS minordiscrepencycount,\r\n"
+//						+ "  COUNT(CASE WHEN vcm.vendor_checkstatus_master_id = 6 THEN 1 END) AS unabletoverifycount\r\n"
+//						+ "from \r\n"
+//						+ "	t_dgv_vendor_checks vc\r\n"
+//						+ "    left join t_dgv_conventional_vendorchecks_to_perform vcp on vc.licheckid = vcp.id\r\n"
+//						+ "    LEFT JOIN t_dgv_source source ON vc.source_id = source.source_id\r\n"
+//						+ "    LEFT JOIN t_dgv_vendor_checkstatus_master vcm ON vc.vendor_checkstatus_master_id = vcm.vendor_checkstatus_master_id\r\n"
+//						+ "where \r\n"
+//						+ "	vcp.check_unique_id in (SELECT\r\n"
+//						+ "      check_unique_id\r\n"
+//						+ "    FROM\r\n"
+//						+ "      t_dgv_conventional_licheck_history\r\n"
+//						+ "	where created_on between ?1 and ?2 \r\n"
+//						+ "    GROUP BY\r\n"
+//						+ "      check_unique_id) \r\n"
+//						+ "	and vc.vendor_id =?3 ;");
+				query.append("select \r\n"
+						+ "	COUNT(CASE WHEN vc.vendor_checkstatus_master_id = 1 THEN 1 END) AS clearcount,\r\n"
+						+ " COUNT(CASE WHEN vc.vendor_checkstatus_master_id = 2 THEN 1 END) AS inprogresscount,\r\n"
+						+ "	COUNT(CASE WHEN vc.vendor_checkstatus_master_id = 3 THEN 1 END) AS insufficientcount,\r\n"
+						+ "	COUNT(CASE WHEN vc.vendor_checkstatus_master_id = 4 THEN 1 END) AS majordiscrepancycount,\r\n"
+						+ "	COUNT(CASE WHEN vc.vendor_checkstatus_master_id = 5 THEN 1 END) AS minordiscrepencycount,\r\n"
+						+ "	COUNT(CASE WHEN vc.vendor_checkstatus_master_id = 6 THEN 1 END) AS unabletoverifycount\r\n"
+						+ "	from \r\n"
+						+ "	t_dgv_vendor_checks vc\r\n"
+						+ "	where \r\n"
+						+ "	vc.created_at between ?1 and ?2 \r\n"
+						+ "	and vc.vendor_id = ?3 	");
+				Query squery = entityManager.createNativeQuery(query.toString());
+				squery.setParameter(1, startDate);
+				squery.setParameter(2, endDate);
+				squery.setParameter(3, dashboardDto.getUserId());
+				resultList = squery.getResultList();
+			
+			if (resultList != null && resultList.size() > 0) {
+				for (Object[] result : resultList) {
+					
+	                candidateStatusCountDtoList.add(0, new CandidateStatusCountDto("Clear", "Clear", Integer.valueOf(String.valueOf(result[0]))));
+	                candidateStatusCountDtoList.add(1, new CandidateStatusCountDto("InProgress", "InProgress", Integer.valueOf(String.valueOf(result[1]))));
+	                candidateStatusCountDtoList.add(2, new CandidateStatusCountDto("InSufficiency", "InSufficiency",  Integer.valueOf(String.valueOf(result[2]))));
+	                candidateStatusCountDtoList.add(3, new CandidateStatusCountDto("MajorDiscrepancy", "MajorDiscrepancy", Integer.valueOf(String.valueOf(result[3]))));
+	                candidateStatusCountDtoList.add(4, new CandidateStatusCountDto("MinorDiscrepancy", "MinorDiscrepancy",  Integer.valueOf(String.valueOf(result[4]))));
+	                candidateStatusCountDtoList.add(5, new CandidateStatusCountDto("UnableToVerify", "UnableToVerify", Integer.valueOf(String.valueOf(result[5]))));
+
+				}
+			}
+                
+                DashboardDto dashboardDtoObj = new DashboardDto(strFromDate, strToDate, null, null, candidateStatusCountDtoList, dashboardDto.getUserId(), null, null);
+                svcSearchResult.setData(dashboardDtoObj);
+                svcSearchResult.setOutcome(true);
+                svcSearchResult.setMessage("Success");
+            } else {
+                svcSearchResult.setData(null);
+                svcSearchResult.setOutcome(false);
+                svcSearchResult.setMessage("please specify user.");
+            }
+        } catch (Exception ex) {
+            log.error("Exception occured in interimand finalreport method in CandidateServiceImpl-->", ex);
+            svcSearchResult.setData(null);
+            svcSearchResult.setOutcome(false);
+            svcSearchResult.setMessage(messageSource.getMessage("ERROR.MESSAGE", null, LocaleContextHolder.getLocale()));
+        }
+        return svcSearchResult;
     }
 
 }

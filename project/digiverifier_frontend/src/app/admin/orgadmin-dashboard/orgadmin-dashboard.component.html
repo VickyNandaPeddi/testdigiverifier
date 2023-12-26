@@ -14,6 +14,22 @@
                 <div class="card" style="z-index: 1;margin: -10px 0 10px 0;box-shadow: 0px 7px 14px #00000017;">
                     <div class="card-body" style="padding: 15px 20px 10px;">
                         <div class="row">
+                            <div class="col-md-4">
+                              <button type="button" (click)="filterToday()" 
+                              class="btn btn-sm btn-primary btn-block">Today</button>
+                            </div>
+                            <div class="col-md-4">
+                              <button type="button" (click)="filterMonthToDate()"
+                              class="btn btn-sm btn-primary btn-block">MTD</button>
+                            </div> 
+                            <div class="col-md-4">
+                              <button type="button" (click)="filterLastMonth()"
+                              class="btn btn-sm btn-primary btn-block">Last Month</button>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="card-body" style="padding: 15px 20px 10px;">
+                        <div class="row">
                             <div class="col-md-5">
                                 <div class="form-group mb-0">
                                     <div class="input-group date-picker">
@@ -147,7 +163,8 @@
                         <div class="row">
                             <div class="col-md-12 orgadmin_uploaddetails">
                                 <app-pending-details></app-pending-details>
-                                <app-report-delivery-details></app-report-delivery-details>
+                                <!-- <app-report-delivery-details></app-report-delivery-details> -->
+                                <app-upload-vendocheck></app-upload-vendocheck>
                                 <app-orgadmin-uploaddetails></app-orgadmin-uploaddetails>
                             </div>
                         </div>

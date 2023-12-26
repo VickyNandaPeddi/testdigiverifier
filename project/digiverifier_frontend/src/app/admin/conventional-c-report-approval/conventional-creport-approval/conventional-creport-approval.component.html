@@ -62,9 +62,10 @@
 
                       <td>
                         <button type="button" class="btn btn-sm btn-primary" title="View Document"
-                          (click)="openCertificate(modalCertificate, item.document)">
+                          (click)="fileview(item.document)">
                           <i class="fa fa-eye"></i>
                         </button>
+
                       </td>
                       <!-- <td>
                         <span class="bg-result" [style.color]="item.colorHexCode">{{ item.agentColor }}</span>
@@ -115,21 +116,21 @@
   </form>
 </div>
 
-<ng-template #modalCertificate let-modal>
-  <div class="modal-header">
-    <h4 class="modal-title" id="modal-basic-title">View Certificate</h4>
-    <button type="button" class="close" aria-label="Close" (click)="modal.dismiss('Cross click')">
-      <span aria-hidden="true">×</span>
-    </button>
-  </div>
-  <div class="modal-body">
-    <div class="row">
-      <div class="col-md-12">
-        <iframe id="viewcandidateCertificate" style="width: 100%; height: 600px"></iframe>
-      </div>
-    </div>
-  </div>
-</ng-template>
+<!--<ng-template #modalCertificate let-modal>-->
+<!--  <div class="modal-header">-->
+<!--    <h4 class="modal-title" id="modal-basic-title">View Certificate</h4>-->
+<!--    <button type="button" class="close" aria-label="Close" (click)="modal.dismiss('Cross click')">-->
+<!--      <span aria-hidden="true">×</span>-->
+<!--    </button>-->
+<!--  </div>-->
+<!--  <div class="modal-body">-->
+<!--    <div class="row">-->
+<!--      <div class="col-md-12">-->
+<!--        <iframe id="viewcandidateCertificate" style="width: 100%; height: 600px"></iframe>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</ng-template>-->
 
 <ng-template #modalVendor let-modal>
   <div class="modal-header">
@@ -231,3 +232,7 @@
     <button type="button" class="btn btn-secondary" (click)="modal.dismiss('cancel')">Cancel</button>
   </div>
 </ng-template>
+
+<div id="preview-container">
+</div>
+

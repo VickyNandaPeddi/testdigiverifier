@@ -17,13 +17,16 @@ import { NgbCalendar, NgbDate } from '@ng-bootstrap/ng-bootstrap';
 import * as XLSX from 'xlsx';
 import { AuthenticationService } from 'src/app/services/authentication.service';
 
+const EXCEL_TYPE =
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
+
 @Component({
-  selector: 'app-customer-utilization',
-  templateUrl: './customer-utilization.component.html',
-  styleUrls: ['./customer-utilization.component.scss']
+  selector: 'app-vendor-utilization-report',
+  templateUrl: './vendor-utilization-report.component.html',
+  styleUrls: ['./vendor-utilization-report.component.scss'],
 })
-export class CustomerUtilizationComponent implements OnInit {
-  pageTitle = 'Conventional Utilization Report';
+export class VendorUtilizationReportComponent implements OnInit {
+  pageTitle = 'Vendor Utilization Report';
   getCustomerUtilizationReport: any = [];
   //merge excel start
   getCandidateUtilizationReport: any = [];
@@ -135,13 +138,13 @@ export class CustomerUtilizationComponent implements OnInit {
     const summaryColumnWidths = [
       { wpx: 120 }, // Column 1 width is set to 100 pixels
       { wpx: 120 }, // Column 2 width is set to 150 pixels
-      { wpx: 50 }, // Column 3 width is set to 120 pixels
-      { wpx: 80 },
-      { wpx: 80 },
+      { wpx: 100 }, // Column 3 width is set to 120 pixels
       { wpx: 100 },
       { wpx: 100 },
       { wpx: 100 },
-      { wpx: 80 },
+      { wpx: 100 },
+      { wpx: 100 },
+      { wpx: 100 },
     ];
 
     // let ws_OVERALLSummary = XLSX.utils.json_to_sheet(this.getCustomerUtilizationReport);

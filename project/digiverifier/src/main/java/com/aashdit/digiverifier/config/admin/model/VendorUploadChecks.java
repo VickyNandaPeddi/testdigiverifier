@@ -3,6 +3,9 @@ package com.aashdit.digiverifier.config.admin.model;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 
@@ -57,6 +60,9 @@ import org.hibernate.annotations.Type;
     @Lob
     @Column(name = "vendor_attribute_values")
     private ArrayList<String> vendorAttirbuteValue;
-
+    
+    @Lob
+    @Column(name = "vendor_uploaded_image", columnDefinition = "TEXT")
+    private String vendorUploadedImage;
 
 }

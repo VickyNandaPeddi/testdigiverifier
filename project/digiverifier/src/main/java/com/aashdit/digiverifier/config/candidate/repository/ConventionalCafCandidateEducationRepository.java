@@ -25,4 +25,6 @@ public interface ConventionalCafCandidateEducationRepository extends JpaReposito
     @Modifying
     void deleteAllByConventionalRequestId(Long conventionalRequestId);
 
+	List<ConventionalCandidateCafEducation> findByCandidateCafEducationId(Long cafEducationId);
+
 }

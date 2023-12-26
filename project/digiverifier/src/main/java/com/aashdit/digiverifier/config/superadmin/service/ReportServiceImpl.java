@@ -1,5 +1,38 @@
 package com.aashdit.digiverifier.config.superadmin.service;
 
+import static com.aashdit.digiverifier.digilocker.service.DigilockerServiceImpl.DIGIVERIFIER_DOC_BUCKET_NAME;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.mail.MessagingException;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+
+import org.apache.commons.lang3.StringUtils;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
+
 import com.aashdit.digiverifier.common.ContentRepository;
 import com.aashdit.digiverifier.common.enums.ContentCategory;
 import com.aashdit.digiverifier.common.enums.ContentSubCategory;
@@ -16,22 +49,60 @@ import com.aashdit.digiverifier.config.admin.repository.VendorChecksRepository;
 import com.aashdit.digiverifier.config.admin.repository.VendorUploadChecksRepository;
 import com.aashdit.digiverifier.config.candidate.Enum.CandidateStatusEnum;
 import com.aashdit.digiverifier.config.candidate.Enum.IDtype;
-import com.aashdit.digiverifier.config.candidate.dto.*;
-import com.aashdit.digiverifier.config.candidate.model.*;
-import com.aashdit.digiverifier.config.candidate.repository.*;
+import com.aashdit.digiverifier.config.candidate.dto.AadharVerificationDTO;
+import com.aashdit.digiverifier.config.candidate.dto.AddressVerificationDto;
+import com.aashdit.digiverifier.config.candidate.dto.CandidateCafAddressDto;
+import com.aashdit.digiverifier.config.candidate.dto.CandidateCafEducationDto;
+import com.aashdit.digiverifier.config.candidate.dto.CandidateReportDTO;
+import com.aashdit.digiverifier.config.candidate.dto.EPFODataDto;
+import com.aashdit.digiverifier.config.candidate.dto.EducationVerificationDTO;
+import com.aashdit.digiverifier.config.candidate.dto.EmploymentTenureVerificationDto;
+import com.aashdit.digiverifier.config.candidate.dto.EmploymentVerificationDto;
+import com.aashdit.digiverifier.config.candidate.dto.EpfoDataResDTO;
+import com.aashdit.digiverifier.config.candidate.dto.ExecutiveSummaryDto;
+import com.aashdit.digiverifier.config.candidate.dto.IDVerificationDTO;
+import com.aashdit.digiverifier.config.candidate.dto.ITRDataDto;
+import com.aashdit.digiverifier.config.candidate.dto.PanCardVerificationDto;
+import com.aashdit.digiverifier.config.candidate.model.Candidate;
+import com.aashdit.digiverifier.config.candidate.model.CandidateAddComments;
+import com.aashdit.digiverifier.config.candidate.model.CandidateCafAddress;
+import com.aashdit.digiverifier.config.candidate.model.CandidateCafEducation;
+import com.aashdit.digiverifier.config.candidate.model.CandidateCafExperience;
+import com.aashdit.digiverifier.config.candidate.model.CandidateIdItems;
+import com.aashdit.digiverifier.config.candidate.model.CandidateStatus;
+import com.aashdit.digiverifier.config.candidate.model.CandidateVerificationState;
+import com.aashdit.digiverifier.config.candidate.model.ConventionalCandidateCafEducation;
+import com.aashdit.digiverifier.config.candidate.repository.CandidateAddCommentRepository;
+import com.aashdit.digiverifier.config.candidate.repository.CandidateCafAddressRepository;
+import com.aashdit.digiverifier.config.candidate.repository.CandidateCafEducationRepository;
+import com.aashdit.digiverifier.config.candidate.repository.CandidateCafExperienceRepository;
+import com.aashdit.digiverifier.config.candidate.repository.CandidateEmailStatusRepository;
+import com.aashdit.digiverifier.config.candidate.repository.CandidateIdItemsRepository;
+import com.aashdit.digiverifier.config.candidate.repository.CandidateRepository;
+import com.aashdit.digiverifier.config.candidate.repository.CandidateStatusHistoryRepository;
+import com.aashdit.digiverifier.config.candidate.repository.CandidateStatusRepository;
+import com.aashdit.digiverifier.config.candidate.repository.CandidateVerificationStateRepository;
+import com.aashdit.digiverifier.config.candidate.repository.ConventionalCafCandidateEducationRepository;
 import com.aashdit.digiverifier.config.candidate.service.CandidateService;
 import com.aashdit.digiverifier.config.superadmin.Enum.ExecutiveName;
 import com.aashdit.digiverifier.config.superadmin.Enum.ReportType;
 import com.aashdit.digiverifier.config.superadmin.Enum.SourceEnum;
 import com.aashdit.digiverifier.config.superadmin.Enum.VerificationStatus;
+import com.aashdit.digiverifier.config.superadmin.dto.CURReportDto;
 import com.aashdit.digiverifier.config.superadmin.dto.CandidateDetailsForReport;
 import com.aashdit.digiverifier.config.superadmin.dto.OrganizationDto;
+import com.aashdit.digiverifier.config.superadmin.dto.ReportResponseDto;
 import com.aashdit.digiverifier.config.superadmin.dto.ReportSearchDto;
+import com.aashdit.digiverifier.config.superadmin.dto.VendorSearchDto;
 import com.aashdit.digiverifier.config.superadmin.model.Organization;
 import com.aashdit.digiverifier.config.superadmin.model.OrganizationExecutive;
 import com.aashdit.digiverifier.config.superadmin.model.ToleranceConfig;
+import com.aashdit.digiverifier.config.superadmin.model.VendorMasterNew;
 import com.aashdit.digiverifier.config.superadmin.repository.ColorRepository;
 import com.aashdit.digiverifier.config.superadmin.repository.OrganizationRepository;
+import com.aashdit.digiverifier.config.superadmin.repository.SourceRepository;
+import com.aashdit.digiverifier.config.superadmin.repository.VendorCheckStatusMasterRepository;
+import com.aashdit.digiverifier.config.superadmin.repository.VendorMasterNewRepository;
 import com.aashdit.digiverifier.email.dto.Email;
 import com.aashdit.digiverifier.email.dto.EmailProperties;
 import com.aashdit.digiverifier.epfo.model.CandidateEPFOResponse;
@@ -41,29 +112,21 @@ import com.aashdit.digiverifier.epfo.repository.EpfoDataRepository;
 import com.aashdit.digiverifier.itr.model.ITRData;
 import com.aashdit.digiverifier.itr.repository.CanditateItrEpfoResponseRepository;
 import com.aashdit.digiverifier.itr.repository.ITRDataRepository;
-import com.aashdit.digiverifier.utils.*;
+import com.aashdit.digiverifier.utils.ApplicationDateUtils;
+import com.aashdit.digiverifier.utils.AwsUtils;
+import com.aashdit.digiverifier.utils.CommonUtils;
+import com.aashdit.digiverifier.utils.DateUtil;
+import com.aashdit.digiverifier.utils.EmailSentTask;
+import com.aashdit.digiverifier.utils.FileUtil;
+import com.aashdit.digiverifier.utils.PdfUtil;
+import com.aashdit.digiverifier.utils.SecurityHelper;
+import com.aashdit.digiverifier.vendorcheck.model.ConventionalVendorCandidatesSubmitted;
+import com.aashdit.digiverifier.vendorcheck.repository.ConventionalCandidatesSubmittedRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.stereotype.Service;
-
-import javax.mail.MessagingException;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import java.io.*;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static com.aashdit.digiverifier.digilocker.service.DigilockerServiceImpl.DIGIVERIFIER_DOC_BUCKET_NAME;
 
 @Service
 @Slf4j
@@ -152,7 +215,30 @@ public class ReportServiceImpl implements ReportService {
 
     @Autowired
     private VendorUploadChecksRepository vendorUploadChecksRepository;
-
+    
+    @Autowired
+    private SourceRepository sourceRepository;
+    
+    @Autowired
+    private ConventionalCandidatesSubmittedRepository conventionalCandidatesSubmittedRepository;
+    
+    @Autowired
+    private CandidateVerificationStateRepository candidateVerificationStateRepository;
+    
+    @Autowired
+    private VendorMasterNewRepository vendorMasterNewRepository;
+    
+    @Autowired
+    private VendorCheckStatusMasterRepository vendorCheckStatusMasterRepository;
+    
+    @Autowired
+    private CandidateCafEducationRepository candidateCafEducationRepository;
+    
+    @Autowired
+    private ConventionalCafCandidateEducationRepository conventionalCafCandidateEducationRepository;
+    
+    @Autowired
+    private CandidateRepository candidateRepository;
 
     SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 
@@ -901,5 +987,426 @@ public class ReportServiceImpl implements ReportService {
         return (candidateStatusEnums.contains(CandidateStatusEnum.ITR));
     }
 
+	@Override
+	public ServiceOutcome<ReportSearchDto> generateConventionalUtilizationReport(ReportSearchDto reportSearchDto) {
+		
+		ServiceOutcome<ReportSearchDto> svcSearchResult = new ServiceOutcome<ReportSearchDto>();
+		List<Object[]> resultList = null;
+		User user = SecurityHelper.getCurrentUser();
+		String strToDate = "";
+		String strFromDate = "";
+		List<Long> orgIds = new ArrayList<Long>();
+		List<Long> agentIds = new ArrayList<Long>();
+		ReportSearchDto reportSearchDtoObj = null;
+		CandidateDetailsForReport candidateDto = null;
+		ReportResponseDto reportResponseDto_vendor = null;
+		try {
+			if (reportSearchDto == null) {
+				strToDate = ApplicationDateUtils.getStringTodayAsDDMMYYYY();
+				strFromDate = ApplicationDateUtils
+						.subtractNoOfDaysFromDateAsDDMMYYYY(new SimpleDateFormat("dd/MM/yyyy").parse(strToDate), 30);
+//				if(user.getRole().getRoleCode().equals("ROLE_CBADMIN")) {
+//					orgIds.add(0, 0l);
+//				}else {
+//					Long orgIdLong = user.getOrganization().getOrganizationId();
+//					orgIds.add(orgIdLong);
+//					reportSearchDto=new ReportSearchDto();
+//					reportSearchDto.setOrganizationIds(orgIds);
+//				}
+			} else {
+				strToDate = reportSearchDto.getToDate();
+				strFromDate = reportSearchDto.getFromDate();
+				orgIds.addAll(reportSearchDto.getOrganizationIds());
+				if (reportSearchDto.getAgentIds() != null) {
+					agentIds.addAll(reportSearchDto.getAgentIds());
+				} else {
+
+				}
+
+			}
+			Date startDate = format.parse(strFromDate + " 00:00:00");
+			Date endDate = format.parse(strToDate + " 23:59:59");
+			StringBuilder query = new StringBuilder();
+			if (reportSearchDto != null && reportSearchDto.getOrganizationIds() != null
+					&& reportSearchDto.getOrganizationIds().size() > 0
+					&& reportSearchDto.getOrganizationIds().get(0) != 0l) {
+				query.append(
+						"select COUNT( DISTINCT CASE WHEN vc.vendor_checkstatus_master_id = 1 and vc.created_at between ?1 and  ?2 THEN vc.vendor_check_id END) AS clearcount, COUNT( DISTINCT CASE WHEN vc.vendor_checkstatus_master_id = 2 and vc.created_at between ?1 and  ?2 THEN vc.vendor_check_id END) AS inprogresscount, COUNT( DISTINCT CASE WHEN vc.vendor_checkstatus_master_id = 3 and vc.created_at between ?1 and  ?2 THEN vc.vendor_check_id END) AS insufficientstatuscount, COUNT( DISTINCT CASE WHEN vc.vendor_checkstatus_master_id = 4 and vc.created_at between ?1 and  ?2 THEN vc.vendor_check_id END) AS majordiscrepancystatuscount, COUNT( DISTINCT CASE WHEN vc.vendor_checkstatus_master_id = 5 and vc.created_at between ?1 and  ?2 THEN vc.vendor_check_id END) AS minordiscrepencystatuscount, COUNT( DISTINCT CASE WHEN vc.vendor_checkstatus_master_id = 6 and vc.created_at between ?1 and  ?2 THEN vc.vendor_check_id END) AS unabletoverifystatuscount, org.organization_name as name, org.organization_id as orgId from t_dgv_role_master rm, t_dgv_user_master um, t_dgv_vendor_master_new vm, t_dgv_vendor_checks vc, t_dgv_organization_master org where org.is_active = 1 and org.organization_id = um.orgainzation_id and um.user_id = vm.user_id and vm.vendor_id = vc.vendor_id and org.organization_id in (?3);");
+				System.out.println(query);
+				Query squery = entityManager.createNativeQuery(query.toString());
+				squery.setParameter(1, startDate);
+				squery.setParameter(2, endDate);
+				squery.setParameter(3, reportSearchDto.getOrganizationIds());
+
+				resultList = squery.getResultList();
+			} else {
+				query.append(
+						"select SUBSTRING_INDEX(source.source_code, ' ', 2) AS first_two_words,\r\n"
+						+ "  COUNT(CASE WHEN vcm.vendor_checkstatus_master_id = 1 THEN 1 END) AS clearcount,\r\n"
+						+ "  COUNT(CASE WHEN vcm.vendor_checkstatus_master_id = 2 THEN 1 END) AS inprogresscount,\r\n"
+						+ "  COUNT(CASE WHEN vcm.vendor_checkstatus_master_id = 3 THEN 1 END) AS insufficientcount,\r\n"
+						+ "  COUNT(CASE WHEN vcm.vendor_checkstatus_master_id = 4 THEN 1 END) AS majordiscrepancycount,\r\n"
+						+ "  COUNT(CASE WHEN vcm.vendor_checkstatus_master_id = 5 THEN 1 END) AS minordiscrepencycount,\r\n"
+						+ "  COUNT(CASE WHEN vcm.vendor_checkstatus_master_id = 6 THEN 1 END) AS unabletoverifycount,\r\n"
+						+ "  COUNT(CASE WHEN vcm.vendor_checkstatus_master_id = 7 THEN 1 END) AS newuploadcount\r\n"
+						+ "from \r\n"
+						+ "	t_dgv_vendor_checks vc\r\n"
+						+ "    left join t_dgv_conventional_vendorchecks_to_perform vcp on vc.licheckid = vcp.id\r\n"
+						+ "    LEFT JOIN t_dgv_source source ON vc.source_id = source.source_id\r\n"
+						+ "    LEFT JOIN t_dgv_vendor_checkstatus_master vcm ON vc.vendor_checkstatus_master_id = vcm.vendor_checkstatus_master_id\r\n"
+						+ "where \r\n"
+						+ "	vcp.check_unique_id in (SELECT\r\n"
+						+ "      check_unique_id\r\n"
+						+ "    FROM\r\n"
+						+ "      t_dgv_conventional_licheck_history\r\n"
+						+ "	where created_on between ?1 and ?2\r\n"
+						+ "    GROUP BY\r\n"
+						+ "      check_unique_id) \r\n"
+						+ "	group by first_two_words");
+//						+ "select COUNT( DISTINCT CASE WHEN vc.vendor_checkstatus_master_id = 1 and vc.created_at between ?1 and  ?2 THEN vc.vendor_check_id END) AS clearcount, COUNT( DISTINCT CASE WHEN vc.vendor_checkstatus_master_id = 2 and vc.created_at between ?1 and  ?2 THEN vc.vendor_check_id END) AS inprogresscount, COUNT( DISTINCT CASE WHEN vc.vendor_checkstatus_master_id = 3 and vc.created_at between ?1 and  ?2 THEN vc.vendor_check_id END) AS insufficientstatuscount, COUNT( DISTINCT CASE WHEN vc.vendor_checkstatus_master_id = 4 and vc.created_at between ?1 and  ?2 THEN vc.vendor_check_id END) AS majordiscrepancystatuscount, COUNT( DISTINCT CASE WHEN vc.vendor_checkstatus_master_id = 5 and vc.created_at between ?1 and  ?2 THEN vc.vendor_check_id END) AS minordiscrepencystatuscount, COUNT( DISTINCT CASE WHEN vc.vendor_checkstatus_master_id = 6 and vc.created_at between ?1 and  ?2 THEN vc.vendor_check_id END) AS unabletoverifystatuscount, org.organization_name as name, org.organization_id as orgId from t_dgv_role_master rm, t_dgv_user_master um, t_dgv_vendor_master_new vm, t_dgv_vendor_checks vc, t_dgv_organization_master org where org.is_active = 1 AND org.organization_id = 88;");
+				Query squery = entityManager.createNativeQuery(query.toString());
+//				squery.setParameter(1, null);
+				squery.setParameter(1, startDate);
+				squery.setParameter(2, endDate);
+				resultList = squery.getResultList();
+				
+//				resultList = vendorCheckStatusMasterRepository.getVendorChecks(startDate, endDate);
+			}
+			if (resultList != null && resultList.size() > 0) {
+				List<ReportResponseDto> pwdvMprReportDtoList = new ArrayList<ReportResponseDto>();
+				for (Object[] result : resultList) {
+
+					ReportResponseDto reportResponseDto = new ReportResponseDto(Long.valueOf(String.valueOf(result[1])),
+							String.valueOf(result[0]), Integer.valueOf(String.valueOf(result[1])), "Clear",
+							Integer.valueOf(String.valueOf(result[2])), "InProgress",
+							Integer.valueOf(String.valueOf(result[3])), "InSufficiency",
+							Integer.valueOf(String.valueOf(result[4])), "MajorDiscrepancy",
+							Integer.valueOf(String.valueOf(result[5])), "MinorDiscrepancy",
+							Integer.valueOf(String.valueOf(result[6])), "UnableToVerify", 
+							Integer.valueOf(String.valueOf(result[7])), "NewUpload", 0);
+					pwdvMprReportDtoList.add(reportResponseDto);
+				}
+				ReportResponseDto reportResponseDtoTotal = new ReportResponseDto(0l, "TOTAL",
+						pwdvMprReportDtoList.stream().mapToInt(pojo -> pojo.getNewuploadcount()).sum(),
+						"NEWUPLOADTOTAL", pwdvMprReportDtoList.stream().mapToInt(pojo -> pojo.getReinvitecount()).sum(),
+						"REINVITETOTAL",
+						pwdvMprReportDtoList.stream().mapToInt(pojo -> pojo.getFinalreportCount()).sum(),
+						"FINALREPORTTOTAL",
+						pwdvMprReportDtoList.stream().mapToInt(pojo -> pojo.getInterimReportCount()).sum(),
+						"PENDINGAPPROVALTOTAL",
+						pwdvMprReportDtoList.stream().mapToInt(pojo -> pojo.getPendingCount()).sum(), "PENDINGNOWTOTAL",
+						pwdvMprReportDtoList.stream().mapToInt(pojo -> pojo.getProcessDeclinedCount()).sum(),
+						"PROCESSDECLINEDTOTAL",
+						pwdvMprReportDtoList.stream().mapToInt(pojo -> pojo.getInvitationExpireCount()).sum(),
+						"INVITATIONEXPIREDTOTAL",
+						pwdvMprReportDtoList.stream().mapToInt(pojo -> pojo.getAgentCount()).sum());
+				pwdvMprReportDtoList.add(reportResponseDtoTotal);
+				reportSearchDtoObj = new ReportSearchDto(strFromDate, strToDate, orgIds, pwdvMprReportDtoList,
+						agentIds);
+
+				svcSearchResult.setData(reportSearchDtoObj);
+				svcSearchResult.setOutcome(true);
+				svcSearchResult.setMessage("Conventional Utilization Report Data generated...");
+			} else {
+				reportSearchDtoObj = new ReportSearchDto(strFromDate, strToDate, orgIds, null, null);
+				svcSearchResult.setData(reportSearchDtoObj);
+				svcSearchResult.setOutcome(false);
+				svcSearchResult.setMessage("NO RECORD FOUND");
+			}
+		} catch (Exception ex) {
+			log.error("Exception occured in getVendorUtilizationReportData method in ReportServiceImpl-->", ex);
+			svcSearchResult.setData(null);
+			svcSearchResult.setOutcome(false);
+			svcSearchResult.setMessage("Something Went Wrong, Please Try After Sometimes.");
+		}
+
+        return svcSearchResult;
+	}
+	
+    @Override
+	public ServiceOutcome<List<CURReportDto>> getVendorDetailsByStatus(VendorSearchDto vendorStatusmasterId) {
+			ServiceOutcome<List<CURReportDto>> result = new ServiceOutcome<List<CURReportDto>>();
+			List<CURReportDto> curReportDtoList = new ArrayList<>();		
+
+			try {
+//				curReportDtoList = vendorCheckStatusMasterRepository.getVendorChecks(vendorCheckStatusMasterId);
+				
+//				List<Source> allSources = sourceRepository.findAll();
+//		        allSources = allSources.stream().filter(p -> p.getSourceId() != 3l).collect(Collectors.toList());
+//		        for (Source source : allSources) { 
+//		            List<ReportUtilizationVendorDto> allVendorCandidateAndSourceId = vendorChecksRepository.findAllVendorCandidateAndSourceId(source.getSourceId());
+		            
+//		            for (ReportUtilizationVendorDto reportUtilizationVendorDto : allVendorCandidateAndSourceId) {
+//		                Long candidateId = reportUtilizationVendorDto.getCandidateId();
+//		                Long vendorId = reportUtilizationVendorDto.getVendorId();
+		                
+//		                List<VendorChecks> byCandidateIdANdVendorIdAndCandidateId = vendorChecksRepository.findByCandidateIdANdVendorIdAndCandidateId(vendorId, candidateId, source.getSourceId());
+				String strToDate = "";
+				String strFromDate = "";
+				if (vendorStatusmasterId.getFromDate().isEmpty() || vendorStatusmasterId.getToDate().isEmpty()) {
+					strToDate = ApplicationDateUtils.getStringTodayAsDDMMYYYY();
+					strFromDate = ApplicationDateUtils
+							.subtractNoOfDaysFromDateAsDDMMYYYY(new SimpleDateFormat("dd/MM/yyyy").parse(strToDate), 30);
+				} else {
+					strFromDate = vendorStatusmasterId.getFromDate();
+					strToDate = vendorStatusmasterId.getToDate();
+				}
+				
+				Date startDate = format.parse(strFromDate + " 00:00:00");
+				Date endDate = format.parse(strToDate + " 23:59:59");
+				
+                List<VendorChecks> byCandidateIdANdVendorIdAndCandidateId = vendorChecksRepository.findByCheckCode(startDate, endDate, vendorStatusmasterId.getStatusCode()+"%");
+				for (VendorChecks vendorChecks : byCandidateIdANdVendorIdAndCandidateId) {
+		                	CURReportDto curReportObj = new CURReportDto();
+		                    User user = userRepository.findById(vendorChecks.getVendorId()).get();
+		                    
+		                    List<Date> resultList = null;
+		                    StringBuilder query = new StringBuilder();
+		                    query.append(
+		    						"select max(history.created_on) from\r\n"
+		    						+ "    t_dgv_vendor_checks vc\r\n"
+		    						+ "	LEFT JOIN t_dgv_conventional_vendorchecks_to_perform cvp ON vc.licheckid = cvp.id\r\n"
+		    						+ "	LEFT JOIN t_dgv_conventional_licheck_history history ON cvp.check_unique_id = history.check_unique_id\r\n"
+		    						+ "where\r\n"
+		    						+ "	vc.licheckid = ?1 ;");
+		    				
+		    				Query squery = entityManager.createNativeQuery(query.toString());
+		    				squery.setParameter(1, vendorChecks.getLicheckId());
+		    				
+		    				resultList = squery.getResultList();
+		    				
+		    				if (resultList != null && resultList.size() > 0) {
+		    					for (Date response : resultList) {
+		    						if(response != null) {
+			    						Date inputDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S").parse(response.toString());
+			    						curReportObj.setCheckDate(new SimpleDateFormat("dd/MM/yyyy").format(inputDate));
+		    						}
+		    					}
+		    				}
+		    				
+		                    curReportObj.setVendorName((user.getUserFirstName() != null) ? user.getUserFirstName() : "NA");
+		                    if (vendorChecks.getCreatedBy() != null) {
+		                        User caseInitatedBy = userRepository.findById(vendorChecks.getCreatedBy().getUserId()).get();
+		                        curReportObj.setCaseInitiatedBy(caseInitatedBy.getUserName() != null ? caseInitatedBy.getUserName() : "NA");
+		                    }
+		                    
+		                    ConventionalVendorCandidatesSubmitted conventionalVendorCandidatesSubmitted = conventionalCandidatesSubmittedRepository.findByRequestId(String.valueOf(vendorChecks.getCandidate().getConventionalRequestId()));
+		                    curReportObj.setRefNo(conventionalVendorCandidatesSubmitted != null ? conventionalVendorCandidatesSubmitted.getApplicantId() : 0l);
+		                    curReportObj.setCandidateName((conventionalVendorCandidatesSubmitted != null) ? conventionalVendorCandidatesSubmitted.getName() : "NA");
+		                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		                    curReportObj.setCaseAssignedDate((vendorChecks.getCreatedOn() != null) ? dateFormat.format(vendorChecks.getCreatedOn()) : dateFormat.format(new Date()));
+		                    curReportObj.setReportStatus((conventionalVendorCandidatesSubmitted != null) ? conventionalVendorCandidatesSubmitted.getStatus().getStatusName() : "NA");
+		                    curReportObj.setDetailName((vendorChecks.getSource() != null) ? vendorChecks.getSource().getSourceName() : "NA");
+		                    curReportObj.setQty((byCandidateIdANdVendorIdAndCandidateId != null) ? byCandidateIdANdVendorIdAndCandidateId.size() : 0l);
+		                    curReportObj.setColorCode((vendorChecks.getVendorCheckStatusMaster() != null) ? vendorChecks.getVendorCheckStatusMaster().getCheckStatusCode() : "NA");
+		                    
+		                    List<VendorMasterNew> byUserId = vendorMasterNewRepository.findByUserId(vendorChecks.getVendorId());
+		                    if (byUserId.isEmpty() == false) {
+		                        byUserId.forEach(data -> {
+		                        	curReportObj.setPricePerUnit((data != null) ? data.getRatePerItem() : 4l);
+		                            if (byCandidateIdANdVendorIdAndCandidateId.isEmpty() == false) {
+		                            	curReportObj.setTotalAmount((data != null) ? byCandidateIdANdVendorIdAndCandidateId.size() * data.getRatePerItem() : 0);
+		                            }
+		                        });
+		                    }
+		                    
+		                    curReportObj.setAadharNumber(vendorChecks.getCandidate().getAadharNumber());
+		                    curReportObj.setPanNumber(vendorChecks.getCandidate().getPanNumber());
+		                    curReportObj.setDateOfBirth(vendorChecks.getCandidate().getDateOfBirth());
+		                    curReportObj.setFatherName(vendorChecks.getCandidate().getAadharFatherName());
+		                    curReportObj.setGender(vendorChecks.getCandidate().getAadharGender());
+		                    curReportObj.setContactNumber(vendorChecks.getCandidate().getContactNumber());
+		                    
+		                    int i = 1;
+		                    List<CandidateCafEducation> cafEdu = candidateCafEducationRepository.findAllByCandidateCandidateId(vendorChecks.getCandidate().getCandidateId());
+		                    for(CandidateCafEducation candidateCafEducation : cafEdu) {
+		                    	List<ConventionalCandidateCafEducation> conventionalCafEdu = conventionalCafCandidateEducationRepository.findByCandidateCafEducationId(candidateCafEducation.getCandidateCafEducationId());
+		                    	if(i==1) {
+		                    		curReportObj.setUniv1(candidateCafEducation.getBoardOrUniversityName());
+//		                    		curReportObj.setCourseName1(candidateCafEducation.getCourseName());
+		                    		if(candidateCafEducation.getColor() != null)
+		                    			curReportObj.setResult1(candidateCafEducation.getColor().getColorCode());
+		                    		curReportObj.setYop1(candidateCafEducation.getYearOfPassing());
+		                    		if(conventionalCafEdu.size() > 0)
+		                    			curReportObj.setEndDate1(new SimpleDateFormat("dd/MM/yyyy").format(conventionalCafEdu.get(0).getEndDate()));
+		                    	}
+		                    	if(i==2) {
+		                    		curReportObj.setUniv2(candidateCafEducation.getBoardOrUniversityName());
+//		                    		curReportObj.setCourseName2(candidateCafEducation.getCourseName());
+		                    		if(candidateCafEducation.getColor() != null)
+		                    			curReportObj.setResult2(candidateCafEducation.getColor().getColorCode());
+		                    		curReportObj.setYop2(candidateCafEducation.getYearOfPassing());
+		                    		if(conventionalCafEdu.size() > 0)
+		                    			curReportObj.setEndDate2(new SimpleDateFormat("dd/MM/yyyy").format(conventionalCafEdu.get(0).getEndDate()));
+		                    	}
+		                    	if(i==3) {
+		                    		curReportObj.setUniv3(candidateCafEducation.getBoardOrUniversityName());
+//		                    		curReportObj.setCourseName3(candidateCafEducation.getCourseName());
+		                    		if(candidateCafEducation.getColor() != null)
+		                    			curReportObj.setResult3(candidateCafEducation.getColor().getColorCode());
+		                    		curReportObj.setYop3(candidateCafEducation.getYearOfPassing());
+		                    		if(conventionalCafEdu.size() > 0)
+		                    			curReportObj.setEndDate3(new SimpleDateFormat("dd/MM/yyyy").format(conventionalCafEdu.get(0).getEndDate()));
+		                    	}
+		                    	
+		                    	i++;
+		                    }
+		                    
+		                    curReportDtoList.add(curReportObj);
+		                }
+
+//		            }
+//		        }
+		        
+		        result.setData(curReportDtoList);
+		        result.setOutcome(true);
+		        result.setMessage("CUR report data fetching successful");
+			} catch (Exception e) {
+		        result.setData(null);
+		        result.setOutcome(false);
+		        result.setMessage("exception in cur report generation " + e.getMessage());
+		    }
+			
+			return result;
+	    }
+
+//	@Override
+//	public ServiceOutcome<VendorSearchDto> getVendorDetailsByStatus(VendorSearchDto reportSearchDto) {
+//		ServiceOutcome<VendorSearchDto> svcSearchResult = new ServiceOutcome<VendorSearchDto>();
+//		List<CandidateDetailsForReport> candidateDetailsDtoList = new ArrayList<CandidateDetailsForReport>();
+//		CandidateEmailStatus candidateEmailStatus = null;
+//		List<CandidateStatus> candidateStatusList = null;
+//		CandidateDetailsForReport candidateDto = null;
+//		List<VendorChecksDto> vendorDetailsDtoList = new ArrayList<VendorChecksDto>();
+//		VendorChecksDto vendorChecksDto = null;
+//		List<Object[]> resultList = null;
+//		StringBuilder query = null;
+//		Query squery = null;
+//		Integer VendorStatusmasterId = null;
+//		try {
+//			if (StringUtils.isNotBlank(reportSearchDto.getStatusCode())
+//					&& StringUtils.isNotBlank(reportSearchDto.getFromDate())
+//					&& StringUtils.isNotBlank(reportSearchDto.getToDate())
+//					&& reportSearchDto.getOrganizationIds() != null
+//					&& !reportSearchDto.getOrganizationIds().isEmpty()) {
+//				Date startDate = format.parse(reportSearchDto.getFromDate() + " 00:00:00");
+//				Date endDate = format.parse(reportSearchDto.getToDate() + " 23:59:59");
+//				List<String> statusList = null;
+//				if (reportSearchDto.getStatusCode().equals("NEWUPLOAD")
+//						|| reportSearchDto.getStatusCode().equals("REINVITE")
+//						|| reportSearchDto.getStatusCode().equals("FINALREPORT")
+//						|| reportSearchDto.getStatusCode().equals("PENDINGAPPROVAL")
+//						|| reportSearchDto.getStatusCode().equals("PROCESSDECLINED")
+//						|| reportSearchDto.getStatusCode().equals("INVITATIONEXPIRED")
+//						|| reportSearchDto.getStatusCode().equals("PENDINGNOW")) {
+//					query = new StringBuilder();
+//					if (reportSearchDto.getStatusCode() != null) {
+//						if (reportSearchDto.getStatusCode().equals("NEWUPLOAD")) {
+//							VendorStatusmasterId = 1;
+//						} else if (reportSearchDto.getStatusCode().equals("REINVITE")) {
+//							VendorStatusmasterId = 2;
+//						} else if (reportSearchDto.getStatusCode().equals("FINALREPORT")) {
+//							VendorStatusmasterId = 3;
+//						} else if (reportSearchDto.getStatusCode().equals("PENDINGNOW")) {
+//							VendorStatusmasterId = 4;
+//						} else if (reportSearchDto.getStatusCode().equals("PROCESSDECLINED")) {
+//							VendorStatusmasterId = 5;
+//						} else if (reportSearchDto.getStatusCode().equals("INVITATIONEXPIRED")) {
+//							VendorStatusmasterId = 6;
+//						}
+//					}
+//					query.append(
+//							"select distinct vc.vendor_check_id, vc.candidate_id, vc.created_by, vc.created_at, vc.email_id, vc.expires_on, vc.tat, vc.vendor_id, vc.source_id, vc.Is_proof_uploaded, vc.agent_Uploaded_Document, vc.address, vc.alternate_contact_no, vc.candidate_name, vc.contact_no, vc.date_of_birth, vc.document_name, vc.father_name, vc.type_of_panel, vc.vendor_checkstatus_master_id from t_dgv_role_master rm, t_dgv_user_master um, t_dgv_vendor_master_new vm, t_dgv_vendor_checks vc, t_dgv_organization_master org where vc.vendor_checkstatus_master_id in (?1) and vc.created_at between ?2 and  ?3 AND org.organization_id = 88;");
+//					squery = entityManager.createNativeQuery(query.toString());
+//					squery.setParameter(1, VendorStatusmasterId);
+//					squery.setParameter(2, startDate);
+//					squery.setParameter(3, endDate);
+////						squery.setParameter(4, reportSearchDto.getOrganizationIds());
+//
+////						if(reportSearchDto.getStatusCode().equals("PENDINGNOW")) {
+////							 statusList = new ArrayList<>();
+////							Collections.addAll(statusList, "INVITATIONSENT","ITR","EPFO","DIGILOCKER","RELATIVEADDRESS");
+////						}else {
+////							 statusList = new ArrayList<>();
+////							Collections.addAll(statusList, reportSearchDto.getStatusCode());
+////						}
+////						squery.setParameter(4, statusList);
+////						if(reportSearchDto.getAgentIds()!=null && !reportSearchDto.getAgentIds().isEmpty()) {
+////							squery.setParameter(5, reportSearchDto.getAgentIds());
+////						}
+//					resultList = squery.getResultList();
+//					
+//					if (resultList != null && resultList.size() > 0) {
+//						for (Object[] result : resultList) {
+//							vendorChecksDto = new VendorChecksDto();
+//							vendorChecksDto.setVendor_check_id(String.valueOf(result[0]));
+////								vendorChecksDto.setCandidate_id(result[1]);
+////								vendorChecksDto.setVendor_check_id(String.valueOf(result[2]));
+//							vendorChecksDto.setCreated_at(String.valueOf(result[3]));
+//							vendorChecksDto.setEmail_id(String.valueOf(result[4]));
+////								vendorChecksDto.setExpires_on(String.valueOf(result[5]) ? 1:0);
+////								vendorChecksDto.setTat(null);
+//							vendorChecksDto.setVendor_id(String.valueOf(result[7]));
+//							vendorChecksDto.setSource_id(String.valueOf(result[8]));
+//							vendorChecksDto.setIs_proof_uploaded(String.valueOf(result[9]));
+////								vendorChecksDto.setVendor_check_id(String.valueOf(result[10]));
+//							vendorChecksDto.setAddress(String.valueOf(result[11]));
+//							vendorChecksDto.setAlternate_contact_no(String.valueOf(result[12]));
+//							vendorChecksDto.setCandidate_name(String.valueOf(result[13]));
+//							vendorChecksDto.setContact_no(String.valueOf(result[14]));
+//							vendorChecksDto.setDate_of_birth(String.valueOf(result[15]));
+//							vendorChecksDto.setDocument_name(String.valueOf(result[16]));
+//							vendorChecksDto.setFather_name(String.valueOf(result[17]));
+//							vendorChecksDto.setType_of_panel(String.valueOf(result[18]));
+//							vendorChecksDto.setVendor_checkstatus_master_id(String.valueOf(result[19]));
+//							vendorDetailsDtoList.add(vendorChecksDto);
+//
+////								candidateDto=new CandidateDetailsForReport();
+////								candidateDto.setCreatedByUserFirstName(String.valueOf(result[0]));
+////								candidateDto.setCreatedByUserLastName(String.valueOf(result[2]));
+////								candidateDto.setCandidateName(String.valueOf(result[3]));
+////								candidateDto.setContactNumber(String.valueOf(result[4]));
+////								candidateDto.setEmailId(String.valueOf(result[5]));
+////								candidateDto.setPanNumber(String.valueOf(result[6]));
+////								candidateDto.setApplicantId(String.valueOf(result[7]));
+////								candidateDto.setCandidateCode(String.valueOf(result[8]));
+////								candidateDto.setDateOfEmailInvite(String.valueOf(result[9]));
+////								candidateDto.setCreatedOn(String.valueOf(result[10]));
+////								candidateDto.setExperienceInMonth(Integer.valueOf(String.valueOf(result[11])));
+////								candidateDto.setCurrentStatusDate(String.valueOf(result[12]));
+////								candidateDto.setColorName(result[13]!=null?colorRepository.findById(Long.valueOf(String.valueOf(result[13]))).get().getColorName():"NA");
+////								candidateDto.setStatusName(String.valueOf(result[14]));
+////								candidateDto.setNumberofexpiredCount(Integer.valueOf(String.valueOf(result[15])));
+////								candidateDto.setReinviteCount(Integer.valueOf(String.valueOf(result[16])));
+////								candidateDto.setStatusDate(String.valueOf(result[17]));
+////								candidateDetailsDtoList.add(candidateDto);
+//						}
+//					}
+//				}
+//			}
+//			VendorSearchDto reportSearchDtoObj = new VendorSearchDto();
+//			reportSearchDtoObj.setFromDate(reportSearchDto.getFromDate());
+//			reportSearchDtoObj.setToDate(reportSearchDto.getToDate());
+//			reportSearchDtoObj.setStatusCode(reportSearchDto.getStatusCode());
+//			reportSearchDtoObj.setOrganizationIds(reportSearchDto.getOrganizationIds());
+//			if (reportSearchDto.getOrganizationIds() != null && reportSearchDto.getOrganizationIds().get(0) != 0) {
+//				reportSearchDtoObj.setOrganizationName(organizationRepository
+//						.findById(reportSearchDto.getOrganizationIds().get(0)).get().getOrganizationName());
+//			}
+//			List<VendorChecksDto> sortedList = vendorDetailsDtoList.stream()
+//					.sorted((o1, o2) -> o1.getVendor_check_id().compareTo(o2.getVendor_check_id()))
+//					.collect(Collectors.toList());
+//			reportSearchDtoObj.setCandidateDetailsDto(sortedList);
+//			svcSearchResult.setData(reportSearchDtoObj);
+//			svcSearchResult.setOutcome(true);
+//			svcSearchResult.setMessage("SUCCESS");
+//		} catch (Exception ex) {
+//			log.error("Exception occured in getVendorDetailsByStatus method in ReportServiceImpl-->", ex);
+//			svcSearchResult.setData(null);
+//			svcSearchResult.setOutcome(false);
+//			svcSearchResult.setMessage("Something Went Wrong, Please Try After Sometimes.");
+//		}
+//		return svcSearchResult;
+//	}
 
 }

@@ -21,7 +21,6 @@ import java.util.Map;
 @Setter
 @ToString
 public class ConventionalCandidateReportDto {
-
     private String name;
 
     private String comments;
@@ -78,7 +77,9 @@ public class ConventionalCandidateReportDto {
     private List<Map<String, List<String>>> pdfByes;
 
     private String colorCode;
-
+    
     private List<Map<String, List<Map<String, String>>>> dataList;
+
+    private String currentDate;
 
 }

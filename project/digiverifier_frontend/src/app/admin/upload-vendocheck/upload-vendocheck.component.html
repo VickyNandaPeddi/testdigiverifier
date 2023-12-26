@@ -7,7 +7,7 @@
     </div>
   </div>
 </div>
-<div class="col-md-12">
+<!-- <div class="col-md-12">
   <form [formGroup]="utilizationReportFilter">
     <div class="row">
       <div class="col-md-12">
@@ -74,7 +74,7 @@
       </div>
     </div>
   </form>
-</div>
+</div> -->
 <br>
 <div class="col-md-12">
   <div class="card">
@@ -91,7 +91,7 @@
             <th>Check Unique Id</th>
             <th>Check Status</th>
             <th>Candidate Request Id</th>
-            <th>Candidadate Name</th>
+            <th>Candidate Name</th>
             <th>Agent Name</th>
             <th>Source Name</th>
             <th>Document Name</th>
@@ -153,10 +153,19 @@
           </tr>
           </tbody>
         </table>
+        <!-- <div class="pagination-container mb-3">
+          <button class="pagination-button prev-button" [disabled]="pageNumber == 0" (click)="goToPrevPage()">
+              <em class="fas fa-chevron-left"></em> Previous
+          </button>
+          <span class="page-number">Page {{currentPageIndex+1}}<span [ngClass]="{'disabled-span': totalPages === 0}"> of {{totalPages}}</span></span>
+          <button class="pagination-button next-button btn-primary" (click)="goToNextPage()">
+              Next <em class="fas fa-chevron-right"></em>
+          </button>
+        </div> -->
         <div class="pagination">
-          <button [disabled]="currentPageIndex == 0" (click)="goToPrevPage()">Previous</button>
-          <span>Page {{currentPageIndex}} of {{totalPages}}</span>
-          <button [disabled]="currentPageIndex == totalPages - 1" (click)="goToNextPage()">Next</button>
+          <button [disabled]="pageNumber == 0" (click)="goToPrevPage()">Previous</button>
+          <span>Page {{pageNumber + 1}} of {{totalPages}}</span>
+          <button [disabled]="pageNumber + 1 >= totalPages" (click)="goToNextPage()">Next</button>
         </div>
       </div>
     </div>
@@ -228,7 +237,7 @@
             <div class="upload-container">
               <input type="file" class="form-control form-control-sm" #fileInput
                      (change)="uploadGlobalCaseDetails(fileInput.files)"
-                     accept=".pdf" [disabled]="selectedStatus === '3'"
+                    [disabled]="selectedStatus === '3'"
                      [required]="selectedStatus !== '3'">
               <div id="preview-container">
                 <button id="preview-button" class="btn btn-primary" disabled>Preview</button>
@@ -236,7 +245,7 @@
             </div>
           </div>
           <!-- ------------------------------------------------venderAttributeCheck------------------------------------------------------- -->
-          <div>
+          <div class="col-md-12">
             <!-- Vendor Attribute Form -->
             <div *ngIf="!globaldataBaseCheck">
               <div *ngFor="let attribute of venderAttributeValue; let i = index" class="col-md-12">
@@ -368,7 +377,7 @@
                 <option value="">- Select Court-</option>
                 <option value="Civil Court">Civil Court</option>
                 <option value="High Court">High Court</option>
-                
+
               </select> -->
                       <!-- </div> -->
                       <!-- </div> -->
@@ -488,7 +497,7 @@
                 </div>
                 <!--            </ng-container>-->
                 <!--            <ng-container *ngIf="selectedTab === 'indian'">-->
-   
+
                 <!--              <div class="tab" (click)="selectTab('indian')" [class.active]="selectedTab === 'indian'">-->
                 <div class="row my-4">
                   <div class="col-md-12 text-center">
@@ -524,15 +533,15 @@
                       </div>
                     </div>
                   </div>
-               
-   
+
+
               <!-- </div> -->
             <!--            </ng-container>-->
             </div>
           </div>
           </div>
 
-          
+
         <div class="row">
           <div class="col-md-12 text-center mt-3 pb-3">
             <button type="button" *ngIf="selectedStatus !== '3'"

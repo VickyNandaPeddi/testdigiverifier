@@ -10,6 +10,22 @@ export class OrgadminDashboardService {
   constructor(private http: HttpClient) {
   }
 
+  public setFromDate(statCode: string) {
+    localStorage.setItem('dashBoardFromDate', statCode);
+  }
+
+  public getFromDate() {
+    return localStorage.getItem('dashBoardFromDate');
+  }
+
+  public setToDate(statCode: string) {
+    localStorage.setItem('dashBoardToDate', statCode);
+  }
+
+  public getToDate() {
+    return localStorage.getItem('dashBoardToDate');
+  }
+
   getUploadDetails(data: any) {
     return this.http.post(`${environment.apiUrl}/api/candidate/getCandidateStatusAndCount`, data);
   }
@@ -79,7 +95,7 @@ export class OrgadminDashboardService {
   }
 
   getReportDeliveryDetails(data: any) {
-    return this.http.post(`${environment.apiUrl}/api/candidate/getReportDeliveryDetailsStatusAndCount`, data);
+    return this.http.post(`${environment.apiUrl}/api/candidate/findConVendorStatusCount`, data);
   }
 
   getPendingDetailsStatusAndCount(data: any) {

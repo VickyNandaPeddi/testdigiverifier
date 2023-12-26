@@ -1,13 +1,24 @@
 package com.aashdit.digiverifier.config.superadmin.controller;
 
-import com.aashdit.digiverifier.config.superadmin.Enum.ReportType;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.aashdit.digiverifier.common.model.ServiceOutcome;
+import com.aashdit.digiverifier.config.superadmin.Enum.ReportType;
+import com.aashdit.digiverifier.config.superadmin.dto.CURReportDto;
 import com.aashdit.digiverifier.config.superadmin.dto.ReportSearchDto;
+import com.aashdit.digiverifier.config.superadmin.dto.VendorSearchDto;
 import com.aashdit.digiverifier.config.superadmin.service.ReportService;
 
 import io.swagger.annotations.ApiOperation;
@@ -57,5 +68,31 @@ public class ReportController {
 	}
 	
 	
+//	@GetMapping(value = "/getVendorUtilizationReport")
+//	public ResponseEntity<ServiceOutcome<List<CURReportDto>>> getVendorUtilizationReport() {
+//		ServiceOutcome<List<CURReportDto>> response = new ServiceOutcome<List<CURReportDto>>();
+//		response = reportService.generateConventionalUtilizationReport(ReportSearchDto reportSearchDto);
+//		return new ResponseEntity<ServiceOutcome<List<CURReportDto>>>(response, HttpStatus.OK);
+//	}
 	
+    @ApiOperation("Vendor Utilization Report")
+	@RequestMapping(value = "/getVendorUtilizationReport", method = { RequestMethod.GET, RequestMethod.POST })
+	public ResponseEntity<ServiceOutcome<ReportSearchDto>> getVendorUtilizationReport(@RequestHeader("Authorization") String authorization,@RequestBody(required=false) ReportSearchDto reportSearchDto) {
+		ServiceOutcome<ReportSearchDto> svcSearchResult=  reportService.generateConventionalUtilizationReport(reportSearchDto);
+		return new ResponseEntity<ServiceOutcome<ReportSearchDto>>(svcSearchResult, HttpStatus.OK);
+	}
+    
+//	@ApiOperation("Vendor Details By Status")
+//	@PostMapping("/getVendorDetailsByStatus")
+//	public ResponseEntity<ServiceOutcome<VendorSearchDto>> getVendorDetailsByStatus(@RequestHeader("Authorization") String authorization,@RequestBody VendorSearchDto reportSearchDto) {
+//		ServiceOutcome<VendorSearchDto> svcSearchResult=  reportService.getVendorDetailsByStatus(reportSearchDto);
+//		return new ResponseEntity<ServiceOutcome<VendorSearchDto>>(svcSearchResult, HttpStatus.OK);
+//	}
+	
+	@ApiOperation("Vendor Details By Status")
+	@PostMapping("/getVendorDetailsByStatus")
+	public ResponseEntity<ServiceOutcome<List<CURReportDto>>> getVendorDetailsByStatus(@RequestHeader("Authorization") String authorization,@RequestBody VendorSearchDto vendorStatusmasterId) {
+		ServiceOutcome<List<CURReportDto>> svcSearchResult=  reportService.getVendorDetailsByStatus(vendorStatusmasterId);
+		return new ResponseEntity<ServiceOutcome<List<CURReportDto>>>(svcSearchResult, HttpStatus.OK);
+	}
 }

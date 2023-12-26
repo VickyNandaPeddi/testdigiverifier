@@ -24,7 +24,7 @@
     <th *ngIf='Action'>Action</th>
     </thead>
     <tbody>
-    <tr *ngFor="let item of filteredDatapagination(); let i=index">
+    <tr *ngFor="let item of filteredData; let i=index">
       <td>{{i + 1}}</td>
       <td>{{ item.createdBy?.userFirstName + " " + item.createdBy?.userLastName}}</td>
       <td>{{item?.name}}</td>

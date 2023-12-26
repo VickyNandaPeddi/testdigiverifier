@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, NgZone, OnInit, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, Validators, FormArray } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ModalDismissReasons, NgbCalendar, NgbDate, NgbDateStruct, NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -9,12 +9,29 @@ import Swal from 'sweetalert2';
 import { CustomerService } from '../../services/customer.service';
 import { LoaderService } from "../../services/loader.service";
 
+import * as am4charts from "@amcharts/amcharts4/charts";
+import * as am4core from "@amcharts/amcharts4/core";
+import { OrgadminDashboardService } from 'src/app/services/orgadmin-dashboard.service';
+
 @Component({
   selector: 'app-upload-vendocheck',
   templateUrl: './upload-vendocheck.component.html',
   styleUrls: ['./upload-vendocheck.component.scss']
 })
 export class UploadVendocheckComponent implements OnInit {
+  private chart: am4charts.XYChart | undefined;
+  getReportDeliveryStatCodes: any;
+  CharReportDelivery: any=[];
+  CharReportDeliveryData: any=[];
+  containerStat:boolean = false;
+  stat_linkAdminApproval:boolean = false;
+  stat_linkCandidateReport:boolean = false;
+  stat_linkConventional:boolean = false;
+  finalreport:boolean=false;
+  startdownload:boolean=false;
+  startpredownload:boolean=false;
+  isCBadmin:boolean = false;
+
   pageTitle = 'Vendor Management';
   vendorchecksupload: any = [];
   vendoruser: any
@@ -47,9 +64,16 @@ export class UploadVendocheckComponent implements OnInit {
   // vendorlist:any;
   tmp: any;
   orgID: any;
-  currentPageIndex: number = 0;
+  // currentPageIndex: number = 0;
+  // currentPage = 1;
+  // pageSize: number = 10;
+
+  pageNumber: number = 0;
+  pageSize: number = 50;
+
   currentPage = 1;
-  pageSize: number = 10;
+  currentPageIndex: number = 0;
+
   formMyProfile: any;
   createdOnDate: any;
   selectedFile: File | null = null;
@@ -67,7 +91,7 @@ export class UploadVendocheckComponent implements OnInit {
   selectedTab: any;
   selectedIndiaAttributeValue: any[] = [];
 
-
+  totalPages: number = 0;
 
   vendorlist = new FormGroup({
     vendorcheckId: new FormControl(''),
@@ -143,11 +167,11 @@ export class UploadVendocheckComponent implements OnInit {
 
   }
 
-  utilizationReportFilter = new FormGroup({
-    fromDate: new FormControl('', Validators.required),
-    toDate: new FormControl('', Validators.required),
-    // sourceId: new FormControl('', Validators.required)
-  });
+  // utilizationReportFilter = new FormGroup({
+  //   fromDate: new FormControl('', Validators.required),
+  //   toDate: new FormControl('', Validators.required),
+  //   // sourceId: new FormControl('', Validators.required)
+  // });
   remarksModified: boolean = false;
 
   patchUserValues() {
@@ -185,7 +209,7 @@ export class UploadVendocheckComponent implements OnInit {
   modeOfVerificationStatus: any = [];
   initToday: any;
 
-  constructor(private candidateService: CandidateService, public authService: AuthenticationService, calendar: NgbCalendar, private customers: CustomerService, private _router: Router, private modalService: NgbModal, private loaderService: LoaderService) {
+  constructor(private candidateService: CandidateService, public authService: AuthenticationService, calendar: NgbCalendar, private customers: CustomerService, private _router: Router, private modalService: NgbModal, private loaderService: LoaderService, private orgadmin:OrgadminDashboardService, private zone: NgZone, private customer: CustomerService) {
     // this.vendorlist = this.buildForm();
     this.orgID = this.authService.getuserId();
     this.getToday = calendar.getToday();
@@ -197,8 +221,8 @@ export class UploadVendocheckComponent implements OnInit {
     let initday = this.getToday.day <= 9 ? '0' + this.getToday.day : this.getToday.day;
     let initfinalDate = initday + "/" + initmonth + "/" + inityear;
     this.initToday = initfinalDate;
-    this.customers.setFromDate(this.initToday);
-    this.customers.setToDate(this.initToday);
+    // this.customers.setFromDate(this.initToday);
+    // this.customers.setToDate(this.initToday);
     this.fromDate = this.initToday;
     this.toDate = this.initToday;
     // }
@@ -210,10 +234,10 @@ export class UploadVendocheckComponent implements OnInit {
     let gettoDate = checktoDate.split('/');
     this.settoDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
     this.getMinDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
-    this.utilizationReportFilter.patchValue({
-      fromDate: this.setfromDate,
-      toDate: this.settoDate
-    });
+    // this.utilizationReportFilter.patchValue({
+    //   fromDate: this.setfromDate,
+    //   toDate: this.settoDate
+    // });
     this.customers.getAllVendorCheckStatus().subscribe(
       (data: any) => {
         this.vendorCheckStatus = data.data;
@@ -247,6 +271,40 @@ export class UploadVendocheckComponent implements OnInit {
       console.log(this.getColors);
     });
 
+    this.getReportDeliveryStatCodes = this.orgadmin.getReportDeliveryStatCode();
+    if(this.getReportDeliveryStatCodes){
+      var userId:any = localStorage.getItem('userId');
+      var fromDate:any = localStorage.getItem('dbFromDate');
+      var toDate:any = localStorage.getItem('dbToDate');
+      let filterData = {
+        'userId': userId,
+        'fromDate': fromDate,
+        'toDate': toDate,
+        'status': this.getReportDeliveryStatCodes
+      }
+      this.orgadmin.getChartDetails(filterData).subscribe((data: any)=>{
+        this.CharReportDelivery=data.data.candidateDtoList;
+        console.log("Before : ", this.CharReportDelivery)
+        for(let i=0; i<this.CharReportDelivery.length; i++) {
+          // let index = _.findIndex(this.CharReportDelivery[i].contentDTOList, {contentSubCategory: 'PRE_APPROVAL'});
+          // this.CharReportDelivery[i].pre_approval_content_id = (index != -1) ? this.CharReportDelivery[i].contentDTOList[index].contentId : -1;
+          // console.log('Lavanyapre',index)
+          let final = this.CharReportDelivery[i].contentDTOList;
+          for (let i=0; i<final.length; i++){
+            if(final[i].contentSubCategory=="FINAL"){
+              this.finalreport = true
+              console.log('Lavanyafinal',final[i].contentSubCategory)
+            }
+          }
+
+        }
+
+
+        console.log("After : ", this.CharReportDelivery)
+        //console.log(data);
+      });
+
+    }
   }
 
   ngOnInit(): void {
@@ -260,6 +318,36 @@ export class UploadVendocheckComponent implements OnInit {
     this.addCivilProceeding();
     this.addCriminalProceeding();
 
+
+    const isCBadminVal = localStorage.getItem('roles');
+    if(this.getReportDeliveryStatCodes){
+      if(this.getReportDeliveryStatCodes === "PENDINGAPPROVAL"){
+        $(".dbtabheading").text("QC Pending");
+        this.stat_linkAdminApproval = true;
+        this.stat_linkCandidateReport = false;
+      }else if(this.getReportDeliveryStatCodes === "INTERIMREPORT"){
+        $(".dbtabheading").text("Interim Report");
+        this.stat_linkAdminApproval = false;
+        this.stat_linkCandidateReport = true;
+      }else if(this.getReportDeliveryStatCodes === "FINALREPORT"){
+        $(".dbtabheading").text("Final Report");
+        this.stat_linkAdminApproval = false;
+        this.stat_linkCandidateReport = true;
+      }else if(this.getReportDeliveryStatCodes === "PROCESSDECLINED"){
+        $(".dbtabheading").text("Process Declined");
+        this.stat_linkAdminApproval = false;
+        this.stat_linkCandidateReport = false;
+
+      }
+      this.containerStat = true;
+      //isCBadmin required for drilldown dashboard at Superadmin
+      if(isCBadminVal == '"ROLE_CBADMIN"'){
+        this.isCBadmin = true;
+        this.stat_linkAdminApproval = false;
+      }else{
+        this.isCBadmin = false;
+      }
+    }
   }
 
   Dateformatter(timestamp: number): NgbDateStruct {
@@ -319,21 +407,24 @@ export class UploadVendocheckComponent implements OnInit {
 
   getUploadVendorCheckData() {
     this.filteredData = [];
-    this.customers.setFromDate(this.fromDate);
-    this.customers.setToDate(this.toDate);
+    // this.customers.setFromDate(this.fromDate);
+    // this.customers.setToDate(this.toDate);
     let filterData = {
       userId: this.orgID,
       fromDate: this.customers.getFromDate(),
       toDate: this.customers.getToDate(),
+      pageNumber: this.pageNumber,
+      status: this.orgadmin.getReportDeliveryStatCode()
     };
     this.customers.getallVendorCheckDetailsByDateRange(filterData).subscribe((data: any) => {
       if (data.outcome === true) {
         this.vendorchecksupload = data.data;
+        this.totalPages = Number(data.message);
         this.filteredData = this.vendorchecksupload;
       }
       const startIndex = this.currentPageIndex * this.pageSize;
       const endIndex = startIndex + this.pageSize;
-      return this.filteredData.slice(startIndex, endIndex);
+      return this.filteredData;
     });
   }
 
@@ -386,9 +477,9 @@ export class UploadVendocheckComponent implements OnInit {
     if (this.toDate == null) {
       this.toDate = finalInputToDate;
     }
-    if (this.utilizationReportFilter.valid) {
-      this.getUploadVendorCheckData();
-    }
+    // if (this.utilizationReportFilter.valid) {
+    //   this.getUploadVendorCheckData();
+    // }
   }
 
 
@@ -413,18 +504,34 @@ export class UploadVendocheckComponent implements OnInit {
     const file = files[0];
     const fileType = file.name.split('.').pop();
 
-    if (
-      fileType &&
-      (fileType == 'pdf' || fileType == 'PDF' || fileType == 'png' || fileType == 'PNG' || fileType == 'jpg' || fileType == 'JPG' || fileType == ' ')
-    ) {
-      this.proofDocumentNew = file;
-      this.previewFile(file);
+    if (fileType) {
+      const lowerCaseFileType = fileType.toLowerCase();
+
+      if (
+        lowerCaseFileType === 'pdf' ||
+        lowerCaseFileType === 'png' ||
+        lowerCaseFileType === 'jpg' ||
+        lowerCaseFileType === 'jpeg' ||
+        lowerCaseFileType === ' '
+      ) {
+        this.proofDocumentNew = file;
+        this.previewFile(file);
+      } else {
+        this.isButtonDisabled=true;
+        Swal.fire({
+          title: 'Please select .jpeg, .jpg, .png, or .pdf file type only.',
+          icon: 'warning'
+        });
+      }
     } else {
+      // Handle the case where fileType is an empty string
+      this.proofDocumentNew=null;
       Swal.fire({
-        title: 'Please select .jpeg, .jpg, .png file type only.',
+        title: 'Please select a file.',
         icon: 'warning'
       });
     }
+
   }
 
   switchForm(form: string) {
@@ -433,9 +540,15 @@ export class UploadVendocheckComponent implements OnInit {
 
   previewFile(file: File) {
     const previewContainer = document.getElementById('preview-container');
+    const lowerCaseFileType = file.type;
 
     if (previewContainer) {
-      if (file.type == 'pdf' || file.type == 'PDF' || file.type == 'png' || file.type == 'PNG' || file.type == 'jpg' || file.type == 'JPG' || file.type == ' ' || file.type === 'application/pdf') {
+      if (
+        lowerCaseFileType === 'application/pdf' ||
+        lowerCaseFileType === 'image/png' ||
+        lowerCaseFileType === 'image/jpeg'||
+        lowerCaseFileType === ' ')
+      {
         const previewButton = document.createElement('button');
         previewButton.textContent = 'Preview';
         previewButton.addEventListener('click', () => {
@@ -685,7 +798,13 @@ export class UploadVendocheckComponent implements OnInit {
       for (const [key, value] of this.attributeMap.entries()) {
         attributeMapObject[key] = value;
       }
-      formData.append('vendorRemarksReport', JSON.stringify(attributeMapObject));
+      if(rawValue.status==='3'){
+        // @ts-ignore
+        formData.append('vendorRemarksReport', null);
+      }
+      else {
+        formData.append('vendorRemarksReport', JSON.stringify(attributeMapObject));
+      }
     } else {
       const venderAttributeValuesGloble = this.venderAttributeValue.reduce((obj, item) => {
         obj[item.label] = item.value;
@@ -698,9 +817,13 @@ export class UploadVendocheckComponent implements OnInit {
       const mergedData = {
         ...this.venderAttributeCheckMapped,
       };
+      if(rawValue.status==='3'){
+        // @ts-ignore
+        formData.append('vendorRemarksReport', null);
+      }else{
       formData.append('vendorRemarksReport', JSON.stringify(mergedData));
+      }
     }
-
     formData.append('file', this.proofDocumentNew);
     formData.append('vendorchecks', JSON.stringify(this.vendorlist.value));
     // formData.append('vendorRemarksReport', JSON.stringify(mergedData));
@@ -894,128 +1017,132 @@ export class UploadVendocheckComponent implements OnInit {
     });
   }
 
-  get totalPages(): number {
-    const filteredItems = this.filteredData;
-    return Math.ceil(filteredItems.length / this.pageSize);
-  }
+  // get totalPages(): number {
+  //   const filteredItems = this.filteredData;
+  //   return Math.ceil(filteredItems.length / this.pageSize);
+  // }
 
   goToPrevPage(): void {
     // this.idvalue=idvalue;
     if (this.currentPageIndex > 0) {
       this.currentPageIndex--;
     }
+    this.pageNumber--;
+    this.getUploadVendorCheckData();
   }
 
   goToNextPage(): void {
     if (this.currentPageIndex < this.totalPages - 1) {
       this.currentPageIndex++;
     }
+    this.pageNumber++;
+    this.getUploadVendorCheckData();
   }
 
   filteredDatapagination(): any[] {
-    const filteredItems = this.filteredData;
+    let filteredItems = this.filteredData;
     const startIndex = this.currentPageIndex * this.pageSize;
     const endIndex = startIndex + this.pageSize;
-    return filteredItems.slice(startIndex, endIndex);
+    return filteredItems;
   }
 
-  filterToday() {
-    let inityear = this.getToday.year;
-    let initmonth =
-      this.getToday.month <= 9
-        ? '0' + this.getToday.month
-        : this.getToday.month;
-    let initday =
-      this.getToday.day <= 9 ? '0' + this.getToday.day : this.getToday.day;
-    let initfinalDate = initday + '/' + initmonth + '/' + inityear;
-    this.initToday = initfinalDate;
-    this.fromDate = this.initToday;
-    this.toDate = this.initToday;
-    let getfromDate = this.initToday.split('/');
-    this.setfromDate = { day: +getfromDate[0], month: +getfromDate[1], year: +getfromDate[2] };
-    let gettoDate = this.initToday.split('/');
-    this.settoDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
-    this.getMinDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
-    this.utilizationReportFilter.patchValue({
-      fromDate: this.setfromDate,
-      toDate: this.settoDate
-    });
-    this.getUploadVendorCheckData();
-  }
+  // filterToday() {
+  //   let inityear = this.getToday.year;
+  //   let initmonth =
+  //     this.getToday.month <= 9
+  //       ? '0' + this.getToday.month
+  //       : this.getToday.month;
+  //   let initday =
+  //     this.getToday.day <= 9 ? '0' + this.getToday.day : this.getToday.day;
+  //   let initfinalDate = initday + '/' + initmonth + '/' + inityear;
+  //   this.initToday = initfinalDate;
+  //   this.fromDate = this.initToday;
+  //   this.toDate = this.initToday;
+  //   let getfromDate = this.initToday.split('/');
+  //   this.setfromDate = { day: +getfromDate[0], month: +getfromDate[1], year: +getfromDate[2] };
+  //   let gettoDate = this.initToday.split('/');
+  //   this.settoDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
+  //   this.getMinDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
+  //   this.utilizationReportFilter.patchValue({
+  //     fromDate: this.setfromDate,
+  //     toDate: this.settoDate
+  //   });
+  //   this.getUploadVendorCheckData();
+  // }
 
-  filterLastMonth() {
-    let date = new Date();
-    date.setMonth(date.getMonth() - 1);
-    let firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 2);
-    let lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1);
-    let fromDateString = firstDayOfMonth.toISOString().split('T')[0];
-    let toDateString = lastDayOfMonth.toISOString().split('T')[0];
+  // filterLastMonth() {
+  //   let date = new Date();
+  //   date.setMonth(date.getMonth() - 1);
+  //   let firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 2);
+  //   let lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+  //   let fromDateString = firstDayOfMonth.toISOString().split('T')[0];
+  //   let toDateString = lastDayOfMonth.toISOString().split('T')[0];
 
-    let getInputFromDate: any = fromDateString.split('-');
-    let finalInputFromDate =
-      getInputFromDate[2] +
-      '/' +
-      getInputFromDate[1] +
-      '/' +
-      getInputFromDate[0];
+  //   let getInputFromDate: any = fromDateString.split('-');
+  //   let finalInputFromDate =
+  //     getInputFromDate[2] +
+  //     '/' +
+  //     getInputFromDate[1] +
+  //     '/' +
+  //     getInputFromDate[0];
 
-    let getInputToDate: any = toDateString.split('-');
-    let finalInputToDate =
-      getInputToDate[2] +
-      '/' +
-      getInputToDate[1] +
-      '/' +
-      getInputToDate[0];
-    this.fromDate = finalInputFromDate;
-    this.toDate = finalInputToDate;
-    let getfromDate = finalInputFromDate.split('/');
-    this.setfromDate = { day: +getfromDate[0], month: +getfromDate[1], year: +getfromDate[2] };
-    let gettoDate = finalInputToDate.split('/');
-    this.settoDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
-    this.getMinDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
-    this.utilizationReportFilter.patchValue({
-      fromDate: this.setfromDate,
-      toDate: this.settoDate
-    });
-    this.getUploadVendorCheckData();
-  }
+  //   let getInputToDate: any = toDateString.split('-');
+  //   let finalInputToDate =
+  //     getInputToDate[2] +
+  //     '/' +
+  //     getInputToDate[1] +
+  //     '/' +
+  //     getInputToDate[0];
+  //   this.fromDate = finalInputFromDate;
+  //   this.toDate = finalInputToDate;
+  //   let getfromDate = finalInputFromDate.split('/');
+  //   this.setfromDate = { day: +getfromDate[0], month: +getfromDate[1], year: +getfromDate[2] };
+  //   let gettoDate = finalInputToDate.split('/');
+  //   this.settoDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
+  //   this.getMinDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
+  //   this.utilizationReportFilter.patchValue({
+  //     fromDate: this.setfromDate,
+  //     toDate: this.settoDate
+  //   });
+  //   this.getUploadVendorCheckData();
+  // }
 
-  filterMonthToDate() {
-    let currentDate = new Date();
-    let firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 2);
-    let fromDateString = firstDayOfMonth.toISOString().split('T')[0];
-    let toDateString = currentDate.toISOString().split('T')[0];
+  // filterMonthToDate() {
+  //   let currentDate = new Date();
+  //   let firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 2);
+  //   let fromDateString = firstDayOfMonth.toISOString().split('T')[0];
+  //   let toDateString = currentDate.toISOString().split('T')[0];
 
-    let getInputFromDate: any = fromDateString.split('-');
-    let finalInputFromDate =
-      getInputFromDate[2] +
-      '/' +
-      getInputFromDate[1] +
-      '/' +
-      getInputFromDate[0];
+  //   let getInputFromDate: any = fromDateString.split('-');
+  //   let finalInputFromDate =
+  //     getInputFromDate[2] +
+  //     '/' +
+  //     getInputFromDate[1] +
+  //     '/' +
+  //     getInputFromDate[0];
 
-    let inityear = this.getToday.year;
-    let initmonth =
-      this.getToday.month <= 9
-        ? '0' + this.getToday.month
-        : this.getToday.month;
-    let initday =
-      this.getToday.day <= 9 ? '0' + this.getToday.day : this.getToday.day;
-    let initfinalDate = initday + '/' + initmonth + '/' + inityear;
-    this.initToday = initfinalDate;
-    this.fromDate = finalInputFromDate;
-    this.toDate = this.initToday;
-    let getfromDate = finalInputFromDate.split('/');
-    this.setfromDate = { day: +getfromDate[0], month: +getfromDate[1], year: +getfromDate[2] };
-    let gettoDate = this.initToday.split('/');
-    this.settoDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
-    this.getMinDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
-    this.utilizationReportFilter.patchValue({
-      fromDate: this.setfromDate,
-      toDate: this.settoDate
-    });
-    this.getUploadVendorCheckData();
-  }
+  //   let inityear = this.getToday.year;
+  //   let initmonth =
+  //     this.getToday.month <= 9
+  //       ? '0' + this.getToday.month
+  //       : this.getToday.month;
+  //   let initday =
+  //     this.getToday.day <= 9 ? '0' + this.getToday.day : this.getToday.day;
+  //   let initfinalDate = initday + '/' + initmonth + '/' + inityear;
+  //   this.initToday = initfinalDate;
+  //   this.fromDate = finalInputFromDate;
+  //   this.toDate = this.initToday;
+  //   let getfromDate = finalInputFromDate.split('/');
+  //   this.setfromDate = { day: +getfromDate[0], month: +getfromDate[1], year: +getfromDate[2] };
+  //   let gettoDate = this.initToday.split('/');
+  //   this.settoDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
+  //   this.getMinDate = { day: +gettoDate[0], month: +gettoDate[1], year: +gettoDate[2] };
+  //   this.utilizationReportFilter.patchValue({
+  //     fromDate: this.setfromDate,
+  //     toDate: this.settoDate
+  //   });
+  //   this.getUploadVendorCheckData();
+  // }
 
   selectTab(tabName: string): void {
     this.selectedTab = tabName;
@@ -1049,7 +1176,7 @@ export class UploadVendocheckComponent implements OnInit {
     this.selectedGlobalAttributeValue.push({ label: value, value: '' });
   }
   addSelectedIndianAttribute(value: string) {
-    const selectedIndAttribute = this.globalAttributeValue.find(attr => attr.label === value);
+    const selectedIndAttribute = this.indiaAttributeValue.find(attr => attr.label === value);
 
     if (selectedIndAttribute) {
       // Remove the selected attribute from the globalAttributeValue array
@@ -1061,7 +1188,7 @@ export class UploadVendocheckComponent implements OnInit {
     this.selectedIndiaAttributeValue.push({ label: value, value: '' });
   }
   onKeyUpGlobal(value: string, label: string): void {
-
+    debugger
     // Find the attribute in the array based on the label
     const foundGlobalAttribute = this.selectedGlobalAttributeValue.find(attr => attr.label === label);
     // Update the value if the attribute is found
@@ -1071,7 +1198,7 @@ export class UploadVendocheckComponent implements OnInit {
     console.log(JSON.stringify(foundGlobalAttribute))
   }
   onKeyUpIndian(value: string, label: string): void {
-
+    debugger
     // Find the attribute in the array based on the label
     const foundIndianAttribute = this.selectedIndiaAttributeValue.find(attr => attr.label === label);
     // Update the value if the attribute is found
@@ -1092,5 +1219,115 @@ export class UploadVendocheckComponent implements OnInit {
     return this.disableGlobalOptionButton;
   }
 
+
+  ngAfterViewInit() {
+    setTimeout(() =>{
+      this.ngOnDestroy();
+      this.loadCharts();
+    },50);
+  }
+
+
+  loadCharts(){
+    this.zone.runOutsideAngular(() => {
+      let chart = am4core.create("chartReportDelivery", am4charts.PieChart);
+      chart.innerRadius = am4core.percent(50);
+      chart.legend = new am4charts.Legend();
+
+      chart.legend.itemContainers.template.paddingTop = 4;
+      chart.legend.itemContainers.template.paddingBottom = 4;
+      chart.legend.fontSize = 13;
+      chart.legend.useDefaultMarker = true;
+      let marker:any = chart.legend.markers.template.children.getIndex(0);
+      marker.cornerRadius(12, 12, 12, 12);
+      marker.strokeWidth = 3;
+      marker.strokeOpacity = 1;
+      marker.stroke = am4core.color("#000");
+
+      chart.legend.maxHeight = 210;
+      chart.legend.scrollable = true;
+      chart.legend.position = "right";
+      chart.logo.disabled = true;
+      chart.padding(10, 0, 0, 0);
+      chart.radius = am4core.percent(95);
+      chart.paddingRight = 0;
+
+      // Add and configure Series
+      let pieSeries = chart.series.push(new am4charts.PieSeries());
+      pieSeries.slices.template.stroke = am4core.color("#fff0");
+      pieSeries.slices.template.strokeWidth = 0;
+      pieSeries.slices.template.strokeOpacity = 0;
+
+      pieSeries.slices.template.tooltipText = "{category}: {value}";
+      pieSeries.labels.template.disabled = true;
+      pieSeries.dataFields.value = "value";
+      pieSeries.dataFields.category = "name";0
+
+      // This creates initial animation
+      pieSeries.hiddenState.properties.opacity = 1;
+      pieSeries.hiddenState.properties.endAngle = -90;
+      pieSeries.hiddenState.properties.startAngle = -90;
+      pieSeries.legendSettings.itemValueText = "[bold]{value}[/bold]";
+      pieSeries.colors.list = [
+        am4core.color("#FF8E00"),
+        am4core.color("#ffd400"),
+        am4core.color("#fd352c"),
+        am4core.color("#08e702"),
+        am4core.color("#9c27b0"),
+        am4core.color("#021aee"),
+      ];
+
+      // var rgm = new am4core.RadialGradientModifier();
+      // rgm.brightnesses.push(-0.2, -0.2, -0.1, 0, - 0.1);
+      // pieSeries.slices.template.fillModifier = rgm;
+      // pieSeries.slices.template.strokeModifier = rgm;
+      // pieSeries.slices.template.strokeWidth = 0;
+
+
+      //pieSeries.slices.template.events.on("hit", myFunction, this);
+      pieSeries.slices.template.events.on('hit', (e) => {
+        const getchartData = e.target._dataItem as any;
+        const statuscodes = getchartData._dataContext.statcode;
+        //console.log(statuscodes);
+        this.orgadmin.setReportDeliveryStatCode(statuscodes);
+        window.location.reload();
+      });
+      chart.legend.itemContainers.template.events.on("hit", (ev) => {
+        const getchartData = ev.target._dataItem as any;
+        const statuscodes = getchartData._label._dataItem._dataContext.statcode;
+        this.orgadmin.setReportDeliveryStatCode(statuscodes);
+        window.location.reload();
+      });
+      pieSeries.slices.template.cursorOverStyle = am4core.MouseCursorStyle.pointer;
+    
+      var userId:any = localStorage.getItem('userId');
+      var fromDate:any = localStorage.getItem('dbFromDate');
+      var toDate:any = localStorage.getItem('dbToDate');
+      let filterData = {
+        'userId': userId,
+        'fromDate': fromDate,
+        'toDate': toDate
+      }
+
+      console.log(filterData)
+      this.orgadmin.getReportDeliveryDetails(filterData).subscribe((uploadinfo: any)=>{
+        this.CharReportDeliveryData=uploadinfo.data.candidateStatusCountDto;
+        //console.log(this.CharReportDeliveryData);
+        let data = [];
+        for (let i = 0; i < this.CharReportDeliveryData.length; i++) {
+          data.push({name: this.CharReportDeliveryData[i].statusName, value: this.CharReportDeliveryData[i].count, statcode: this.CharReportDeliveryData[i].statusCode });
+        }
+        chart.data = data;
+      });
+    });
+  }
+
+ngOnDestroy() {
+  this.zone.runOutsideAngular(() => {
+    if (this.chart) {
+      this.chart.dispose();
+    }
+  });
+}
 }
 

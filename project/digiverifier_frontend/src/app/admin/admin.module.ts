@@ -47,9 +47,12 @@ import {ConventionalPendingUploadComponent} from './conventional-pending-upload/
 import {
   ConventionalCReportApprovalComponent
 } from './conventional-c-report-approval/conventional-creport-approval/conventional-creport-approval.component';
+import { VendorUtilizationReportComponent } from './vendor-utilization-report/vendor-utilization-report.component';
+import { ConventionalUtilizationReportComponent } from './conventional-utilization-report/conventional-utilization-report.component';
 
 @NgModule({
   declarations: [
+    VendorUtilizationReportComponent,
     AdminComponent,
     DashboardComponent,
     AdminHeaderComponent,
@@ -83,6 +86,7 @@ import {
     ConventionalVendorFinalReportComponent,
     ConventionalPendingUploadComponent,
     ConventionalCReportApprovalComponent,
+    ConventionalUtilizationReportComponent,
   ],
   imports: [
     CommonModule,

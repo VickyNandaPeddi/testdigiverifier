@@ -67,7 +67,7 @@ export class LoginComponent implements OnInit {
         }else if(role === "ROLE_AGENTHR"){
           this.router.navigate(['/admin/BGVverification']);
         }else if(role === "ROLE_VENDOR"){
-          this.router.navigate(['/admin/uploadvendorcheck']);
+          this.router.navigate(['/admin/orgadminDashboard']);
         }else{
           this.router.navigate(['/login']);
         }

@@ -1,12 +1,56 @@
 package com.aashdit.digiverifier.config.admin.service;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.PDFRenderer;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StreamUtils;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.aashdit.digiverifier.common.model.ServiceOutcome;
-import com.aashdit.digiverifier.config.admin.dto.*;
-import com.aashdit.digiverifier.config.admin.model.*;
-import com.aashdit.digiverifier.config.admin.repository.*;
+import com.aashdit.digiverifier.config.admin.dto.CivilProceedingsDTO;
+import com.aashdit.digiverifier.config.admin.dto.CriminalProceedingsDTO;
+import com.aashdit.digiverifier.config.admin.dto.UserDto;
+import com.aashdit.digiverifier.config.admin.dto.VendorChecksDto;
+import com.aashdit.digiverifier.config.admin.dto.VendorInitiatDto;
+import com.aashdit.digiverifier.config.admin.dto.VendorcheckdashbordtDto;
+import com.aashdit.digiverifier.config.admin.model.AgentSampleCsvXlsMaster;
+import com.aashdit.digiverifier.config.admin.model.CriminalCheck;
+import com.aashdit.digiverifier.config.admin.model.Role;
+import com.aashdit.digiverifier.config.admin.model.User;
+import com.aashdit.digiverifier.config.admin.model.VendorChecks;
+import com.aashdit.digiverifier.config.admin.model.VendorUploadChecks;
+import com.aashdit.digiverifier.config.admin.repository.AgentSampleCsvXlsMasterRepository;
+import com.aashdit.digiverifier.config.admin.repository.CriminalCheckRepository;
+import com.aashdit.digiverifier.config.admin.repository.RoleRepository;
+import com.aashdit.digiverifier.config.admin.repository.UserRepository;
+import com.aashdit.digiverifier.config.admin.repository.VendorChecksRepository;
+import com.aashdit.digiverifier.config.admin.repository.VendorUploadChecksRepository;
 import com.aashdit.digiverifier.config.candidate.model.Candidate;
 import com.aashdit.digiverifier.config.candidate.model.CandidateCaseDetails;
-import com.aashdit.digiverifier.config.candidate.model.StatusMaster;
 import com.aashdit.digiverifier.config.candidate.repository.CandidateCaseDetailsRepository;
 import com.aashdit.digiverifier.config.candidate.repository.CandidateRepository;
 import com.aashdit.digiverifier.config.candidate.util.CSVUtil;
@@ -14,7 +58,11 @@ import com.aashdit.digiverifier.config.candidate.util.ExcelUtil;
 import com.aashdit.digiverifier.config.superadmin.dto.DashboardDto;
 import com.aashdit.digiverifier.config.superadmin.model.Source;
 import com.aashdit.digiverifier.config.superadmin.model.VendorCheckStatusMaster;
-import com.aashdit.digiverifier.config.superadmin.repository.*;
+import com.aashdit.digiverifier.config.superadmin.repository.ColorRepository;
+import com.aashdit.digiverifier.config.superadmin.repository.OrganizationRepository;
+import com.aashdit.digiverifier.config.superadmin.repository.SourceRepository;
+import com.aashdit.digiverifier.config.superadmin.repository.VendorCheckStatusMasterRepository;
+import com.aashdit.digiverifier.config.superadmin.repository.VendorMasterNewRepository;
 import com.aashdit.digiverifier.utils.ApplicationDateUtils;
 import com.aashdit.digiverifier.utils.AwsUtils;
 import com.aashdit.digiverifier.utils.SecurityHelper;
@@ -31,33 +79,13 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StreamUtils;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.Year;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
-public class UserServiceImpl<T> implements UserService {
+public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserRepository userRepository;
@@ -785,7 +813,7 @@ public class UserServiceImpl<T> implements UserService {
         ServiceOutcome<List<VendorChecksDto>> svcSearchResult = new ServiceOutcome<List<VendorChecksDto>>();
 
         try {
-            List<VendorChecks> vendorList = new ArrayList<>();
+//            List<VendorChecks> vendorList = new ArrayList<>();
             List<VendorChecksDto> vendorChecksDtos = new ArrayList<>();
             String strToDate = "";
             String strFromDate = "";
@@ -796,62 +824,77 @@ public class UserServiceImpl<T> implements UserService {
                     .subtractNoOfDaysFromDateAsDDMMYYYY(new SimpleDateFormat("dd/MM/yyyy").parse(strToDate), 7);
             Date startDate = formatter.parse(strFromDate + " 00:00:00");
             Date endDate = formatter.parse(strToDate + " 23:59:59");
-            vendorList = vendorChecksRepository.findAllByDateRange(dashboardDto.getUserId(), startDate, endDate);
-            vendorList.forEach(vc -> {
-                VendorChecksDto vendorChecksDto = new VendorChecksDto();
-                vendorChecksDto.setAddress(vc.getAddress());
-                vendorChecksDto.setAgentUploadedDocument(vc.getAgentUploadedDocument());
-                vendorChecksDto.setAlternateContactNo(vc.getAlternateContactNo());
-                vendorChecksDto.setCandidate(vc.getCandidate());
-                vendorChecksDto.setCandidateName(vc.getCandidateName());
-                ConventionalVendorliChecksToPerform byVendorChecksVendorcheckId = liCheckToPerformRepository
-                        .findByVendorChecksVendorcheckId(vc.getVendorcheckId());
-                if (byVendorChecksVendorcheckId != null) {
-                    vendorChecksDto.setCheckUniqueId(String.valueOf(byVendorChecksVendorcheckId.getCheckUniqueId()));
-                    vendorChecksDto.setVendorCheckStatusMaster(byVendorChecksVendorcheckId.getCheckStatus());
-                    ModeOfVerificationStatusMaster modeOfVerificationStatusMaster = modeOfVerificationStatusMasterRepository
-                            .findById(Long.valueOf(byVendorChecksVendorcheckId.getModeOfVerificationRequired())).get();
-                    vendorChecksDto
-                            .setModeOfVerificationPerformed(modeOfVerificationStatusMaster.getModeOfVerification());
-                    if (byVendorChecksVendorcheckId.getStopCheck() != null) {
-                        vendorChecksDto.setStopCheckStatus(byVendorChecksVendorcheckId.getStopCheck());
-                    }
-                    if (byVendorChecksVendorcheckId.getDateToComplete() != null) {
+            
+			Pageable pageable =null;
+			if(dashboardDto.getPageNumber()!=null) {
+				pageable = PageRequest.of(dashboardDto.getPageNumber(), 10);
+			}
+			
+			Long checkStatusId = Long.valueOf(0);
+			if(!dashboardDto.getStatus().isEmpty()) {
+				Optional<VendorCheckStatusMaster> vendorCheckStatusMaster = vendorCheckStatusMasterRepository.findByCheckStatusCode(dashboardDto.getStatus());
+				if(vendorCheckStatusMaster.isPresent())
+					checkStatusId = vendorCheckStatusMaster.get().getVendorCheckStatusMasterId();
+			}
+			
+            Page<VendorChecks> vendorList = vendorChecksRepository.findAllByDateRange(dashboardDto.getUserId(), startDate, endDate, checkStatusId, pageable);
+            if(vendorList.hasContent()) {
+            	vendorList.getContent().forEach(vc -> {
+                    VendorChecksDto vendorChecksDto = new VendorChecksDto();
+                    vendorChecksDto.setAddress(vc.getAddress());
+                    vendorChecksDto.setAgentUploadedDocument(vc.getAgentUploadedDocument());
+                    vendorChecksDto.setAlternateContactNo(vc.getAlternateContactNo());
+                    vendorChecksDto.setCandidate(vc.getCandidate());
+                    vendorChecksDto.setCandidateName(vc.getCandidateName());
+                    ConventionalVendorliChecksToPerform byVendorChecksVendorcheckId = liCheckToPerformRepository
+                            .findByVendorChecksVendorcheckId(vc.getVendorcheckId());
+                    if (byVendorChecksVendorcheckId != null) {
+                        vendorChecksDto.setCheckUniqueId(String.valueOf(byVendorChecksVendorcheckId.getCheckUniqueId()));
+                        vendorChecksDto.setVendorCheckStatusMaster(byVendorChecksVendorcheckId.getCheckStatus());
+                        ModeOfVerificationStatusMaster modeOfVerificationStatusMaster = modeOfVerificationStatusMasterRepository
+                                .findById(Long.valueOf(byVendorChecksVendorcheckId.getModeOfVerificationRequired())).get();
                         vendorChecksDto
-                                .setFastTrackDateTime(String.valueOf(byVendorChecksVendorcheckId.getDateToComplete()));
+                                .setModeOfVerificationPerformed(modeOfVerificationStatusMaster.getModeOfVerification());
+                        if (byVendorChecksVendorcheckId.getStopCheck() != null) {
+                            vendorChecksDto.setStopCheckStatus(byVendorChecksVendorcheckId.getStopCheck());
+                        }
+                        if (byVendorChecksVendorcheckId.getDateToComplete() != null) {
+                            vendorChecksDto
+                                    .setFastTrackDateTime(String.valueOf(byVendorChecksVendorcheckId.getDateToComplete()));
+                        }
+                        if (byVendorChecksVendorcheckId.getDisabled() != null) {
+                            vendorChecksDto.setDisableStatus(byVendorChecksVendorcheckId.getDisabled());
+                        }
                     }
-                    if (byVendorChecksVendorcheckId.getDisabled() != null) {
-                        vendorChecksDto.setDisableStatus(byVendorChecksVendorcheckId.getDisabled());
+                    vendorChecksDto.setContactNo(vc.getContactNo());
+                    vendorChecksDto.setCreatedBy(vc.getCreatedBy());
+                    vendorChecksDto.setCreatedOn(vc.getCreatedOn());
+                    vendorChecksDto.setDateOfBirth(vc.getDateOfBirth());
+                    vendorChecksDto.setDocumentname(vc.getDocumentname());
+                    vendorChecksDto.setEmailId(vc.getEmailId());
+                    vendorChecksDto.setExpireson(vc.getExpireson());
+                    vendorChecksDto.setFatherName(vc.getFatherName());
+                    vendorChecksDto.setIsproofuploaded(vc.getIsproofuploaded());
+                    vendorChecksDto.setPathKey(vc.getPathKey());
+                    vendorChecksDto.setSource(vc.getSource());
+                    vendorChecksDto.setTat(vc.getTat());
+                    vendorChecksDto.setTypeOfPanel(vc.getTypeOfPanel());
+                    vendorChecksDto.setVendorcheckId(vc.getVendorcheckId());
+                    vendorChecksDto.setVendorId(vc.getVendorId());
+                    VendorUploadChecks vendoruploadChecks = vendorUploadChecksRepository
+                            .findByVendorChecksVendorcheckId(vc.getVendorcheckId());
+                    if (vendoruploadChecks != null) {
+                        vendorChecksDto.setVendorUplodedDocument(vendoruploadChecks.getVendorUploadedDocument());
                     }
-                }
-                vendorChecksDto.setContactNo(vc.getContactNo());
-                vendorChecksDto.setCreatedBy(vc.getCreatedBy());
-                vendorChecksDto.setCreatedOn(vc.getCreatedOn());
-                vendorChecksDto.setDateOfBirth(vc.getDateOfBirth());
-                vendorChecksDto.setDocumentname(vc.getDocumentname());
-                vendorChecksDto.setEmailId(vc.getEmailId());
-                vendorChecksDto.setExpireson(vc.getExpireson());
-                vendorChecksDto.setFatherName(vc.getFatherName());
-                vendorChecksDto.setIsproofuploaded(vc.getIsproofuploaded());
-                vendorChecksDto.setPathKey(vc.getPathKey());
-                vendorChecksDto.setSource(vc.getSource());
-                vendorChecksDto.setTat(vc.getTat());
-                vendorChecksDto.setTypeOfPanel(vc.getTypeOfPanel());
-                vendorChecksDto.setVendorcheckId(vc.getVendorcheckId());
-                vendorChecksDto.setVendorId(vc.getVendorId());
-                VendorUploadChecks vendoruploadChecks = vendorUploadChecksRepository
-                        .findByVendorChecksVendorcheckId(vc.getVendorcheckId());
-                if (vendoruploadChecks != null) {
-                    vendorChecksDto.setVendorUplodedDocument(vendoruploadChecks.getVendorUploadedDocument());
-                }
-                vendorChecksDtos.add(vendorChecksDto);
-            });
+                    vendorChecksDtos.add(vendorChecksDto);
+                });
+            }
             List<VendorChecksDto> collect = vendorChecksDtos.stream().filter(vc -> vc.getCheckUniqueId() != null)
                     .collect(Collectors.toList());
             if (!vendorList.isEmpty()) {
                 svcSearchResult.setData(collect);
                 svcSearchResult.setOutcome(true);
-                svcSearchResult.setMessage("SUCCESS");
+                svcSearchResult.setMessage(String.valueOf(vendorList.getTotalPages()));
             } else {
                 svcSearchResult.setData(new ArrayList<>());
                 svcSearchResult.setOutcome(false);
@@ -914,99 +957,93 @@ public class UserServiceImpl<T> implements UserService {
             ObjectMapper objectMapper = new ObjectMapper();
             ArrayList<String> agentAttributeList = new ArrayList<>();
             String vendorRemarksRep = vendorRemarksReport.replace("\"", "");
+            
 
             if(vendorCheckss.getSource().getSourceName().equalsIgnoreCase("GLOBAL DATABASE CHECK")) {
-                TypeReference<Map<String, List<Map<String, String>>>> typeReference = new TypeReference<Map<String, List<Map<String, String>>>>() {
-                };
-
-                Map<String, List<Map<String, String>>> data = objectMapper.readValue(vendorRemarksReport, typeReference);
-
-                // Convert the map entries to a list
-                List<Map<String, List<Map<String, String>>>> resultList = new ArrayList<>();
-                for (Map.Entry<String, List<Map<String, String>>> entry : data.entrySet()) {
-                    Map<String, List<Map<String, String>>> groupMap = new HashMap<>();
-                    groupMap.put(entry.getKey(), entry.getValue());
-                    resultList.add(groupMap);
-                    String entryJson = objectMapper.writeValueAsString(groupMap);
-                    System.out.println(entryJson);
-                    agentAttributeList.add(entryJson);
-                }
-
-                // Print the result list
-                for (Map<String, List<Map<String, String>>> entry : resultList) {
-                    System.out.println(entry);
-                }
-
+            	TypeReference<Map<String, List<Map<String, String>>>> typeReference = new TypeReference<Map<String, List<Map<String, String>>>>() {
+            	};
+            	Map<String, List<Map<String, String>>> data = objectMapper.readValue(vendorRemarksReport, typeReference);
+            	// Convert the map entries to a list
+            	List<Map<String, List<Map<String, String>>>> resultList = new ArrayList<>();
+            	for (Map.Entry<String, List<Map<String, String>>> entry : data.entrySet()) {
+            		Map<String, List<Map<String, String>>> groupMap = new HashMap<>();
+            		groupMap.put(entry.getKey(), entry.getValue());
+            		resultList.add(groupMap);
+            		String entryJson = objectMapper.writeValueAsString(groupMap);
+            		System.out.println(entryJson);
+            		agentAttributeList.add(entryJson);
+            	}
+            	// Print the result list
+            	for (Map<String, List<Map<String, String>>> entry : resultList) {
+            		System.out.println(entry);
+            	}
             }
             if(vendorCheckss.getSource().getSourceName().equalsIgnoreCase("GLOBAL DATABASE CHECK")==false) {
-                if (vendorcheckdashbordtDto.getValue() != null) {
-                    if (vendorRemarksRep.contains("null") == false) {
-
-                        String dssa = vendorRemarksReport.replace("\"", "");
-                        Map<String, String> agentAttributeMap = objectMapper.readValue(vendorRemarksReport, new TypeReference<Map<String, String>>() {
-                        });
-                        for (Map.Entry<String, String> entry : agentAttributeMap.entrySet()) {
-                            String concatenated = entry.getKey() + "=" + entry.getValue();
-                            String keyWithoutSpaces = entry.getKey().replaceAll("\\s", "").toLowerCase();
-                            if (keyWithoutSpaces.equalsIgnoreCase("pancardnumber")) {
-                                String panCardNumberValue = entry.getValue();
-                                System.out.println("PanCardNumber value: " + panCardNumberValue);
-                                VendorChecks byVendorcheckId = vendorChecksRepository
-                                        .findByVendorcheckId(vendorcheckdashbordtDto.getVendorcheckId());
-                                Candidate byCandidateId = candidateRepository
-                                        .findByCandidateId(byVendorcheckId.getCandidate().getCandidateId());
-                                byCandidateId.setPanNumber(panCardNumberValue);
-                                Candidate save = candidateRepository.save(byCandidateId);
-                                log.info("updated candidate with pancard  number -" + save.getPanNumber()
-                                        + "  -for candidate -" + save.getCandidateId());
-                            }
-                            if (keyWithoutSpaces.equalsIgnoreCase("aadharcardno")) {
-                                String aadharCardNumberValue = entry.getValue();
-                                log.info("AADHARCardNumber value: " + aadharCardNumberValue);
-                                VendorChecks byVendorcheckId = vendorChecksRepository
-                                        .findByVendorcheckId(vendorcheckdashbordtDto.getVendorcheckId());
-                                Candidate byCandidateId = candidateRepository
-                                        .findByCandidateId(byVendorcheckId.getCandidate().getCandidateId());
-                                byCandidateId.setAadharNumber(aadharCardNumberValue);
-                                Candidate save = candidateRepository.save(byCandidateId);
-                                log.info("updated candidate with aadhar number -" + save.getAadharNumber()
-                                        + "  -for candidate -" + save.getCandidateId());
-                            }
-                            if (keyWithoutSpaces.equalsIgnoreCase("drivinglicensenumber")) {
-                                String drivinglicneseNumber = entry.getValue();
-                                log.info("Driving License number value: " + drivinglicneseNumber);
-                                VendorChecks byVendorcheckId = vendorChecksRepository
-                                        .findByVendorcheckId(vendorcheckdashbordtDto.getVendorcheckId());
-                                Candidate byCandidateId = candidateRepository
-                                        .findByCandidateId(byVendorcheckId.getCandidate().getCandidateId());
-                                byCandidateId.setDrivingLicenseNumber(drivinglicneseNumber);
-                                Candidate save = candidateRepository.save(byCandidateId);
-                                log.info("updated candidate with aadhar number -" + save.getAadharNumber()
-                                        + "  -for candidate -" + save.getCandidateId());
-                            }
-                            if (keyWithoutSpaces.equalsIgnoreCase("passportnumber")) {
-                                String passportnumber = entry.getValue();
-                                log.info("Driving License number value: " + passportnumber);
-                                VendorChecks byVendorcheckId = vendorChecksRepository
-                                        .findByVendorcheckId(vendorcheckdashbordtDto.getVendorcheckId());
-                                Candidate byCandidateId = candidateRepository
-                                        .findByCandidateId(byVendorcheckId.getCandidate().getCandidateId());
-                                byCandidateId.setPassportNumber(passportnumber);
-                                Candidate save = candidateRepository.save(byCandidateId);
-                                log.info("updated candidate with aadhar number -" + save.getAadharNumber()
-                                        + "  -for candidate -" + save.getCandidateId());
-                            }
-
-                            if (keyWithoutSpaces.equalsIgnoreCase("yearofpassing")) {
-                                log.info("eve" + entry.getValue());
-
-                            }
-
-                            agentAttributeList.add(concatenated);
-                        }
-                    }
-                }
+            	if (vendorcheckdashbordtDto.getValue() != null) {
+            		if (vendorRemarksRep.contains("null") == false) {
+            			String dssa = vendorRemarksReport.replace("\"", "");
+            			Map<String, String> agentAttributeMap = objectMapper.readValue(vendorRemarksReport, new TypeReference<Map<String, String>>() {
+            			});
+            			for (Map.Entry<String, String> entry : agentAttributeMap.entrySet()) {
+            				String concatenated = entry.getKey() + "=" + entry.getValue();
+            				String keyWithoutSpaces = entry.getKey().replaceAll("\\s", "").toLowerCase();
+            				if (keyWithoutSpaces.equalsIgnoreCase("pancardnumber")) {
+            					String panCardNumberValue = entry.getValue();
+            					System.out.println("PanCardNumber value: " + panCardNumberValue);
+            					VendorChecks byVendorcheckId = vendorChecksRepository
+            							.findByVendorcheckId(vendorcheckdashbordtDto.getVendorcheckId());
+            					Candidate byCandidateId = candidateRepository
+            							.findByCandidateId(byVendorcheckId.getCandidate().getCandidateId());
+            					byCandidateId.setPanNumber(panCardNumberValue);
+            					Candidate save = candidateRepository.save(byCandidateId);
+            					log.info("updated candidate with pancard number -" + save.getPanNumber()
+            					+ " -for candidate -" + save.getCandidateId());
+            				}
+            				if (keyWithoutSpaces.equalsIgnoreCase("aadharcardno")) {
+            					String aadharCardNumberValue = entry.getValue();
+            					log.info("AADHARCardNumber value: " + aadharCardNumberValue);
+            					VendorChecks byVendorcheckId = vendorChecksRepository
+            							.findByVendorcheckId(vendorcheckdashbordtDto.getVendorcheckId());
+            					Candidate byCandidateId = candidateRepository
+            							.findByCandidateId(byVendorcheckId.getCandidate().getCandidateId());
+            					byCandidateId.setAadharNumber(aadharCardNumberValue);
+            					Candidate save = candidateRepository.save(byCandidateId);
+            					log.info("updated candidate with aadhar number -" + save.getAadharNumber()
+            					+ " -for candidate -" + save.getCandidateId());
+            				}
+            				if (keyWithoutSpaces.equalsIgnoreCase("drivinglicensenumber")) {
+            					String drivinglicneseNumber = entry.getValue();
+            					log.info("Driving License number value: " + drivinglicneseNumber);
+            					VendorChecks byVendorcheckId = vendorChecksRepository
+            							.findByVendorcheckId(vendorcheckdashbordtDto.getVendorcheckId());
+            					Candidate byCandidateId = candidateRepository
+            							.findByCandidateId(byVendorcheckId.getCandidate().getCandidateId());
+            					byCandidateId.setDrivingLicenseNumber(drivinglicneseNumber);
+            					Candidate save = candidateRepository.save(byCandidateId);
+            					log.info("updated candidate with aadhar number -" + save.getAadharNumber()
+            					+ " -for candidate -" + save.getCandidateId());
+            				}
+            				if (keyWithoutSpaces.equalsIgnoreCase("passportnumber")) {
+            					String passportnumber = entry.getValue();
+            					log.info("Driving License number value: " + passportnumber);
+            					VendorChecks byVendorcheckId = vendorChecksRepository
+            							.findByVendorcheckId(vendorcheckdashbordtDto.getVendorcheckId());
+            					Candidate byCandidateId = candidateRepository
+            							.findByCandidateId(byVendorcheckId.getCandidate().getCandidateId());
+            					byCandidateId.setPassportNumber(passportnumber);
+            					Candidate save = candidateRepository.save(byCandidateId);
+            					log.info("updated candidate with aadhar number -" + save.getAadharNumber()
+            					+ " -for candidate -" + save.getCandidateId());
+            				}
+            				if (keyWithoutSpaces.equalsIgnoreCase("yearofpassing")) {
+            					log.info("eve" + entry.getValue());
+            				}
+            				agentAttributeList.add(concatenated);
+            			}
+            		}
+            	}
             }
+
             if (vendorUploadChecks == null) {
                 VendorUploadChecks vendorUploadCheckNew = new VendorUploadChecks();
                 System.out.println("-------------create------");
@@ -1014,6 +1051,74 @@ public class UserServiceImpl<T> implements UserService {
                     byte[] vendorProof = proofDocumentNew.getBytes();
                     if (vendorProof != null) {
                         vendorUploadCheckNew.setVendorUploadedDocument(vendorProof);
+                        String contentType = proofDocumentNew.getContentType();
+                        if (contentType.equalsIgnoreCase("application/pdf")) {
+                            // NEW CHANGE FOR CONVERTING PDF TO IMAGE THIS IS NEW PROOF START
+                            List<byte[]> imageBytes = convertPDFToImage(vendorProof);
+                            List<Map<String, List<String>>> encodedImageMapsList = new ArrayList<>();
+
+                            if (imageBytes != null && !imageBytes.isEmpty()) {
+                                for (int j = 0; j < imageBytes.size(); j++) {
+                                    byte[] imageBytess = imageBytes.get(j);
+                                    String encodedImage = Base64.getEncoder().encodeToString(imageBytess);
+                                    String key = "image" + (j + 1);
+                                    log.info("Encoded image {} added to list.", key);
+
+                                    // Create a new list for each image
+                                    List<String> encodedImagesForDocument = new ArrayList<>();
+                                    encodedImagesForDocument.add(encodedImage);
+
+                                    // Create a new map for each image
+                                    Map<String, List<String>> encodedImageMap = new HashMap<>();
+                                    encodedImageMap.put(key, encodedImagesForDocument);
+
+                                    // Add the map to the list
+                                    encodedImageMapsList.add(encodedImageMap);
+                                }
+
+                                log.info("encodedImagesForDocument size: {}", encodedImageMapsList.size());
+
+                                // Convert the list to a JSON string
+                                try {
+                                    ObjectMapper objectMapper1 = new ObjectMapper();
+                                    String jsonEncodedImageMapsList = objectMapper1.writeValueAsString(encodedImageMapsList);
+                                    // Set the JSON string to the entity field
+                                    vendorUploadCheckNew.setVendorUploadedImage(jsonEncodedImageMapsList);
+
+                                } catch (JsonProcessingException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }else {
+                            System.out.println(contentType + "Content type");
+                            // Directly encode the image to Base64
+                            String encodedImage = Base64.getEncoder().encodeToString(vendorProof);
+                            // Create a new map for each image
+                            Map<String, List<String>> encodedImageMap = new HashMap<>();
+                            String key = "image1"; // You can customize the key as needed
+                            List<String> encodedImagesForDocument = new ArrayList<>();
+                            encodedImagesForDocument.add(encodedImage);
+                            encodedImageMap.put(key, encodedImagesForDocument);
+
+                            // Add the map to the list
+                            List<Map<String, List<String>>> encodedImageMapsList = new ArrayList<>();
+                            encodedImageMapsList.add(encodedImageMap);
+
+                            log.info("encodedImagesForDocument size: {}", encodedImageMapsList.size());
+
+                            // Convert the list to a JSON string
+                            try {
+                                ObjectMapper objectMapper1 = new ObjectMapper();
+                                String jsonEncodedImageMapsList = objectMapper1.writeValueAsString(encodedImageMapsList);
+                                // Set the JSON string to the entity field
+                                vendorUploadCheckNew.setVendorUploadedImage(jsonEncodedImageMapsList);
+                            } catch (JsonProcessingException e) {
+                                // Handle the exception (e.g., log or throw)
+                                e.printStackTrace();
+                            }
+                        }
+                        // NEW CHANGE FOR CONVERTING PDF TO IMAGE END 
+
                     }
                 }
 //                vendorUploadCheckNew.setVendorUploadedDocument(proofDocumentNew != null ? proofDocumentNew.getBytes() : null);
@@ -1050,6 +1155,84 @@ public class UserServiceImpl<T> implements UserService {
 
             } else {
                 System.out.println("-------------update------");
+
+                // NEW CHANGE FOR CONVERT PDF TO IMAGE THIS FOR UPDATE PROOF START
+
+                if (proofDocumentNew != null) {
+                    String contentType = proofDocumentNew.getContentType();
+                    if (contentType.equalsIgnoreCase("application/pdf")) {
+                        byte[] vendorProof = proofDocumentNew.getBytes();
+                        if (vendorProof != null) {
+                            List<byte[]> imageBytes = convertPDFToImage(vendorProof);
+                            List<Map<String, List<String>>> encodedImageMapsList = new ArrayList<>();
+
+                            if (imageBytes != null && !imageBytes.isEmpty()) {
+                                for (int j = 0; j < imageBytes.size(); j++) {
+                                    byte[] imageBytess = imageBytes.get(j);
+                                    String encodedImage = Base64.getEncoder().encodeToString(imageBytess);
+                                    String key = "image" + (j + 1);
+                                    log.info("Encoded image {} added to list.", key);
+
+                                    // Create a new list for each image
+                                    List<String> encodedImagesForDocument = new ArrayList<>();
+                                    encodedImagesForDocument.add(encodedImage);
+
+                                    // Create a new map for each image
+                                    Map<String, List<String>> encodedImageMap = new HashMap<>();
+                                    encodedImageMap.put(key, encodedImagesForDocument);
+
+                                    // Add the map to the list
+                                    encodedImageMapsList.add(encodedImageMap);
+                                }
+
+                                log.info("encodedImagesForDocument size: {}", encodedImageMapsList.size());
+
+                                // Convert the list to a JSON string
+                                try {
+                                    ObjectMapper objectMapper1 = new ObjectMapper();
+                                    String jsonEncodedImageMapsList = objectMapper1.writeValueAsString(encodedImageMapsList);
+                                    // Set the JSON string to the entity field
+                                    vendorUploadChecks.setVendorUploadedImage(jsonEncodedImageMapsList);
+                                } catch (JsonProcessingException e) {
+                                    // Handle the exception (e.g., log or throw)
+                                    e.printStackTrace();
+                                }
+                            }
+
+                        }
+                    } else {
+                        byte[] vendorProof = proofDocumentNew.getBytes();
+                        System.out.println(contentType + "Content type");
+                        // Directly encode the image to Base64
+                        String encodedImage = Base64.getEncoder().encodeToString(vendorProof);
+                        // Create a new map for each image
+                        Map<String, List<String>> encodedImageMap = new HashMap<>();
+                        String key = "image1"; // You can customize the key as needed
+                        List<String> encodedImagesForDocument = new ArrayList<>();
+                        encodedImagesForDocument.add(encodedImage);
+                        encodedImageMap.put(key, encodedImagesForDocument);
+
+                        // Add the map to the list
+                        List<Map<String, List<String>>> encodedImageMapsList = new ArrayList<>();
+                        encodedImageMapsList.add(encodedImageMap);
+
+                        log.info("encodedImagesForDocument size: {}", encodedImageMapsList.size());
+
+                        // Convert the list to a JSON string
+                        try {
+                            ObjectMapper objectMapper1 = new ObjectMapper();
+                            String jsonEncodedImageMapsList = objectMapper1.writeValueAsString(encodedImageMapsList);
+                            // Set the JSON string to the entity field
+                            vendorUploadChecks.setVendorUploadedImage(jsonEncodedImageMapsList);
+                        } catch (JsonProcessingException e) {
+                            // Handle the exception (e.g., log or throw)
+                            e.printStackTrace();
+                        }
+                    }
+                }
+				 
+                // NEW CHANGE FOR CONVERT PDF TO IMAGE THIS FOR UPDATE PROOF END
+                
                 vendorUploadChecks
                         .setVendorUploadedDocument(proofDocumentNew != null ? proofDocumentNew.getBytes() : null);
                 vendorUploadChecks.setAgentColor(colorRepository.findById(vendorcheckdashbordtDto.getColorid()).get());
@@ -1076,73 +1259,104 @@ public class UserServiceImpl<T> implements UserService {
                     svcSearchResult.setOutcome(false);
                 }
             }
+            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd");
+            SimpleDateFormat outputFormat = new SimpleDateFormat("dd-MM-yyyy");
             if (vendorcheckdashbordtDto.getLegalProcedings() != null) {
                 log.info("vendorupload check id" + result.getVendoruploadcheckId());
                 Optional<ConventionalVendorliChecksToPerform> findById = liCheckToPerformRepository
                         .findById(vendorCheckss.getLicheckId());
-                if (vendorcheckdashbordtDto.getLegalProcedings().getCivilProceedings() != null) {
-                    CivilProceedingsDTO civilProceedings = vendorcheckdashbordtDto.getLegalProcedings()
-                            .getCivilProceedings();
-                    CriminalCheck civilproceding = criminalCheckRepository.findByVendorUploadCheckIdAndProceedingsTypeAndCourt(result.getVendoruploadcheckId(), "CIVILPROCEDING", civilProceedings.getCourt());
-                    if (civilproceding != null) {
-                        civilproceding.setCheckUniqueId(String.valueOf(findById.get().getCheckUniqueId()));
-                        civilproceding.setRequestId(findById.get().getRequestId());
-                        civilproceding.setCreatedOn(new Date());
-                        civilproceding.setProceedingsType("CIVILPROCEDING");
-                        civilproceding.setJurisdiction(civilProceedings.getJurisdiction());
-                        civilproceding.setNameOfTheCourt(civilProceedings.getNameOfTheCourt());
-                        civilproceding.setResult(civilProceedings.getResult());
-                        civilproceding.setCourt(civilProceedings.getCourt());
-                        civilproceding.setDateOfSearch(civilProceedings.getDateOfSearch());
-                        civilproceding.setVendorUploadCheckId(result.getVendoruploadcheckId());
-                        criminalChecks.add(civilproceding);
-                    } else {
-                        CriminalCheck criminalCheckForCivilProcedings = new CriminalCheck();
-                        criminalCheckForCivilProcedings.setCheckUniqueId(String.valueOf(findById.get().getCheckUniqueId()));
-                        criminalCheckForCivilProcedings.setRequestId(findById.get().getRequestId());
-                        criminalCheckForCivilProcedings.setCreatedOn(new Date());
-                        criminalCheckForCivilProcedings.setProceedingsType("CIVILPROCEDING");
-                        criminalCheckForCivilProcedings.setJurisdiction(civilProceedings.getJurisdiction());
-                        criminalCheckForCivilProcedings.setNameOfTheCourt(civilProceedings.getNameOfTheCourt());
-                        criminalCheckForCivilProcedings.setResult(civilProceedings.getResult());
-                        criminalCheckForCivilProcedings.setCourt(civilProceedings.getCourt());
-                        criminalCheckForCivilProcedings.setDateOfSearch(civilProceedings.getDateOfSearch());
-                        criminalCheckForCivilProcedings.setVendorUploadCheckId(result.getVendoruploadcheckId());
-                        criminalChecks.add(criminalCheckForCivilProcedings);
-                    }
-                }
-                if (vendorcheckdashbordtDto.getLegalProcedings().getCriminalProceedings() != null) {
-                    CriminalProceedingsDTO criminalProceedings = vendorcheckdashbordtDto.getLegalProcedings()
-                            .getCriminalProceedings();
-                    CriminalCheck criminalproceding = criminalCheckRepository.findByVendorUploadCheckIdAndProceedingsTypeAndCourt(result.getVendoruploadcheckId(), "CRIMINALPROCEDING", criminalProceedings.getCourt());
-                    if (criminalproceding != null) {
-                        criminalproceding.setCheckUniqueId(String.valueOf(findById.get().getCheckUniqueId()));
-                        criminalproceding.setRequestId(findById.get().getRequestId());
-                        criminalproceding.setCreatedOn(new Date());
-                        criminalproceding.setProceedingsType("CRIMINALPROCEDING");
-                        criminalproceding.setJurisdiction(criminalProceedings.getJurisdiction());
-                        criminalproceding.setNameOfTheCourt(criminalProceedings.getNameOfTheCourt());
-                        criminalproceding.setResult(criminalProceedings.getResult());
-                        criminalproceding.setCourt(criminalProceedings.getCourt());
-                        criminalproceding.setDateOfSearch(criminalProceedings.getDateOfSearch());
-                        criminalproceding.setVendorUploadCheckId(result.getVendoruploadcheckId());
-                        criminalChecks.add(criminalproceding);
-                    } else {
-                        CriminalCheck criminalCheckForCriminalProceding = new CriminalCheck();
-                        criminalCheckForCriminalProceding.setCheckUniqueId(String.valueOf(findById.get().getCheckUniqueId()));
-                        criminalCheckForCriminalProceding.setRequestId(findById.get().getRequestId());
-                        criminalCheckForCriminalProceding.setCreatedOn(new Date());
-                        criminalCheckForCriminalProceding.setProceedingsType("CRIMINALPROCEDING");
-                        criminalCheckForCriminalProceding.setJurisdiction(criminalProceedings.getJurisdiction());
-                        criminalCheckForCriminalProceding.setNameOfTheCourt(criminalProceedings.getNameOfTheCourt());
-                        criminalCheckForCriminalProceding.setResult(criminalProceedings.getResult());
-                        criminalCheckForCriminalProceding.setCourt(criminalProceedings.getCourt());
-                        criminalCheckForCriminalProceding.setDateOfSearch(criminalProceedings.getDateOfSearch());
-                        criminalCheckForCriminalProceding.setVendorUploadCheckId(result.getVendoruploadcheckId());
-                        criminalChecks.add(criminalCheckForCriminalProceding);
-                    }
+                if (vendorcheckdashbordtDto.getLegalProcedings().getCivilProceedingsList() != null) {
+                    List<CivilProceedingsDTO> civilProceedings = vendorcheckdashbordtDto.getLegalProcedings()
+                            .getCivilProceedingsList();
+                    for (CivilProceedingsDTO civilProceeding : civilProceedings) {
+                        // Find existing CriminalCheck by vendor upload check ID, proceedings type, and court
+                        CriminalCheck criminalproceeding = criminalCheckRepository.findByVendorUploadCheckIdAndProceedingsTypeAndCourt(
+                                result.getVendoruploadcheckId(), "CIVILPROCEDING", civilProceeding.getCourt());
 
+
+                        // If a matching CriminalCheck is found
+                        if (criminalproceeding != null) {
+                            criminalproceeding.setCheckUniqueId(String.valueOf(findById.get().getCheckUniqueId()));
+                            criminalproceeding.setRequestId(findById.get().getRequestId());
+                            criminalproceeding.setCreatedOn(new Date());
+                            criminalproceeding.setProceedingsType("CIVILPROCEDING");
+                            criminalproceeding.setJurisdiction(civilProceeding.getJurisdiction());
+                            criminalproceeding.setNameOfTheCourt(civilProceeding.getNameOfTheCourt());
+                            criminalproceeding.setResult(civilProceeding.getResult());
+                            criminalproceeding.setCourt(civilProceeding.getCourt());
+                            
+                            
+                            Date date = inputFormat.parse(civilProceeding.getDateOfSearch());
+							String outputDateString = outputFormat.format(date);
+
+                            criminalproceeding.setDateOfSearch(outputDateString);
+                            criminalproceeding.setVendorUploadCheckId(result.getVendoruploadcheckId());
+
+                            
+                            criminalChecks.add(criminalproceeding);
+                        } else {
+                            CriminalCheck criminalCheckForCivilProcedings = new CriminalCheck();
+                            criminalCheckForCivilProcedings.setCheckUniqueId(String.valueOf(findById.get().getCheckUniqueId()));
+                            criminalCheckForCivilProcedings.setRequestId(findById.get().getRequestId());
+                            criminalCheckForCivilProcedings.setCreatedOn(new Date());
+                            criminalCheckForCivilProcedings.setProceedingsType("CIVILPROCEDING");
+                            criminalCheckForCivilProcedings.setJurisdiction(civilProceeding.getJurisdiction());
+                            criminalCheckForCivilProcedings.setNameOfTheCourt(civilProceeding.getNameOfTheCourt());
+                            criminalCheckForCivilProcedings.setResult(civilProceeding.getResult());
+                            criminalCheckForCivilProcedings.setCourt(civilProceeding.getCourt());
+                            
+                            Date date = inputFormat.parse(civilProceeding.getDateOfSearch());
+							String outputDateString = outputFormat.format(date);
+
+                            criminalCheckForCivilProcedings.setDateOfSearch(outputDateString);
+                            criminalCheckForCivilProcedings.setVendorUploadCheckId(result.getVendoruploadcheckId());
+                            criminalChecks.add(criminalCheckForCivilProcedings);
+                        }
+                    }
                 }
+                if (vendorcheckdashbordtDto.getLegalProcedings().getCriminalProceedingsList() != null) {
+                    List<CriminalProceedingsDTO> criminalProceedings = vendorcheckdashbordtDto.getLegalProcedings()
+                            .getCriminalProceedingsList();
+                    
+                    for (CriminalProceedingsDTO criminalProceeding : criminalProceedings) {
+                        CriminalCheck criminalproceding = criminalCheckRepository.findByVendorUploadCheckIdAndProceedingsTypeAndCourt(
+                                result.getVendoruploadcheckId(), "CRIMINALPROCEDING", criminalProceeding.getCourt());
+
+                        if (criminalproceding != null) {
+                            criminalproceding.setCheckUniqueId(String.valueOf(findById.get().getCheckUniqueId()));
+                            criminalproceding.setRequestId(findById.get().getRequestId());
+                            criminalproceding.setCreatedOn(new Date());
+                            criminalproceding.setProceedingsType("CRIMINALPROCEDING");
+                            criminalproceding.setJurisdiction(criminalProceeding.getJurisdiction());
+                            criminalproceding.setNameOfTheCourt(criminalProceeding.getNameOfTheCourt());
+                            criminalproceding.setResult(criminalProceeding.getResult());
+                            criminalproceding.setCourt(criminalProceeding.getCourt());
+                            
+                            Date date = inputFormat.parse(criminalProceeding.getDateOfSearch());
+							String outputDateString = outputFormat.format(date);
+                            
+                            criminalproceding.setDateOfSearch(outputDateString);
+                            criminalproceding.setVendorUploadCheckId(result.getVendoruploadcheckId());
+                            criminalChecks.add(criminalproceding);
+                        } else {
+                            CriminalCheck criminalCheckForCriminalProceding = new CriminalCheck();
+                            criminalCheckForCriminalProceding.setCheckUniqueId(String.valueOf(findById.get().getCheckUniqueId()));
+                            criminalCheckForCriminalProceding.setRequestId(findById.get().getRequestId());
+                            criminalCheckForCriminalProceding.setCreatedOn(new Date());
+                            criminalCheckForCriminalProceding.setProceedingsType("CRIMINALPROCEDING");
+                            criminalCheckForCriminalProceding.setJurisdiction(criminalProceeding.getJurisdiction());
+                            criminalCheckForCriminalProceding.setNameOfTheCourt(criminalProceeding.getNameOfTheCourt());
+                            criminalCheckForCriminalProceding.setResult(criminalProceeding.getResult());
+                            criminalCheckForCriminalProceding.setCourt(criminalProceeding.getCourt());
+                            Date date = inputFormat.parse(criminalProceeding.getDateOfSearch());
+							String outputDateString = outputFormat.format(date);
+                            criminalCheckForCriminalProceding.setDateOfSearch(outputDateString);
+                            criminalCheckForCriminalProceding.setVendorUploadCheckId(result.getVendoruploadcheckId());
+                            criminalChecks.add(criminalCheckForCriminalProceding);
+                        }
+                    }
+                }
+                log.info("Number of criminal checks to save: " + criminalChecks.size());
                 List<CriminalCheck> criminalChecks1 = criminalCheckRepository.saveAll(criminalChecks);
                 log.info("saved criminal checks" + criminalChecks1);
             }
@@ -1153,6 +1367,26 @@ public class UserServiceImpl<T> implements UserService {
         }
         return svcSearchResult;
     }
+    
+    public List<byte[]> convertPDFToImage(byte[] pdfBytes) throws IOException {
+	    try (PDDocument document = PDDocument.load(new ByteArrayInputStream(pdfBytes))) {
+	        PDFRenderer pdfRenderer = new PDFRenderer(document);
+	        int numberOfPages = document.getNumberOfPages();
+
+	        List<byte[]> imageBytesList = new ArrayList<>();
+
+	        for (int pageIndex = 0; pageIndex < numberOfPages; pageIndex++) {
+	            BufferedImage image = pdfRenderer.renderImageWithDPI(pageIndex, 300);
+	            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	            javax.imageio.ImageIO.write(image, "png", baos);
+	            imageBytesList.add(baos.toByteArray());
+	        }
+
+	        log.info("Number of Images: {}" + imageBytesList.size());
+	        // If needed, you can return the list of image bytes
+	        return imageBytesList;
+	    }
+	}
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -1166,6 +1400,7 @@ public class UserServiceImpl<T> implements UserService {
             VendorInitiatDto vendorInitiatDto = new ObjectMapper().readValue(vendorChecksString,
                     VendorInitiatDto.class);
             byte[] candidateDocument = new byte[0];
+            VendorCheckStatusMaster byVendorCheckStatusMasterId = vendorCheckStatusMasterRepository.findByVendorCheckStatusMasterId(vendorInitiatDto.getVendorCheckStatusMasterId());
             if (vendorInitiatDto.getDocumentUrl() != null) {
                 S3Object object = s3Client.getObject(DIGIVERIFIER_DOC_BUCKET_NAME, vendorInitiatDto.getDocumentUrl());
                 InputStream inputStream = object.getObjectContent();
@@ -1214,6 +1449,9 @@ public class UserServiceImpl<T> implements UserService {
                     vendorChecksobj.setAlternateContactNo(vendorInitiatDto.getAlternateContactNo());
                     vendorChecksobj.setTypeOfPanel(vendorInitiatDto.getTypeOfPanel());
                     vendorChecksobj.setCreatedOn(new Date());
+                    if(byVendorCheckStatusMasterId!=null) {
+                    	vendorChecksobj.setVendorCheckStatusMaster(byVendorCheckStatusMasterId);
+                    }
                     savedVendorChecks = vendorChecksRepository.save(vendorChecksobj);
                     svcSearchResult.setMessage("vendor Checks document update successfully.");
 //                    svcSearchResult.setData(vendorChecksobj);
@@ -1246,6 +1484,9 @@ public class UserServiceImpl<T> implements UserService {
                     vendorChecks.setCreatedOn(new Date());
                     if (vendorInitiatDto.getLicheckId() != null) {
                         vendorChecks.setLicheckId(Long.valueOf(vendorInitiatDto.getLicheckId()));
+                    }
+                    if(byVendorCheckStatusMasterId!=null) {
+                    	vendorChecks.setVendorCheckStatusMaster(byVendorCheckStatusMasterId);
                     }
                     savedVendorChecks = vendorChecksRepository.save(vendorChecks);
 //                    svcSearchResult.setData(save);
@@ -1283,7 +1524,9 @@ public class UserServiceImpl<T> implements UserService {
                     if (vendorInitiatDto.getLicheckId() != null) {
                         vendorChecksobj.setLicheckId(Long.valueOf(vendorInitiatDto.getLicheckId()));
                     }
-
+                    if(byVendorCheckStatusMasterId!=null) {
+                    	vendorChecksobj.setVendorCheckStatusMaster(byVendorCheckStatusMasterId);
+                    }
                     savedVendorChecks = vendorChecksRepository.save(vendorChecksobj);
 //                    svcSearchResult.setData(save);
                     svcSearchResult.setMessage("vendor Checks  update successfully.");
@@ -1316,6 +1559,9 @@ public class UserServiceImpl<T> implements UserService {
                     vendorChecks.setCreatedOn(new Date());
                     if (vendorInitiatDto.getLicheckId() != null) {
                         vendorChecks.setLicheckId(Long.valueOf(vendorInitiatDto.getLicheckId()));
+                    }
+                    if(byVendorCheckStatusMasterId!=null) {
+                    	vendorChecks.setVendorCheckStatusMaster(byVendorCheckStatusMasterId);
                     }
                     savedVendorChecks = vendorChecksRepository.save(vendorChecks);
 //                    svcSearchResult.setData(save);

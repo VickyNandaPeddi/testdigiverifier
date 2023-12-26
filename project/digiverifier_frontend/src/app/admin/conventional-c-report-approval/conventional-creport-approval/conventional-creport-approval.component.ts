@@ -92,6 +92,78 @@ export class ConventionalCReportApprovalComponent implements OnInit {
     }
   }
 
+
+
+  base64ToUint8Array(base64: any) {
+    const binaryString = window.atob(base64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    return bytes;
+  }
+  fileview(base64Content: any) {
+    const previewContainer = document.getElementById('preview-container');
+    try {
+      const uint8Array = this.base64ToUint8Array(base64Content);
+
+      // Attempt to detect content type
+      const type = this.detectContentType(uint8Array);
+      // Create a Blob from Uint8Array
+      const blob = new Blob([uint8Array], { type: type });
+
+      const downloadLink = document.createElement('a');
+      const objectURL = URL.createObjectURL(blob);
+
+      downloadLink.href = objectURL;
+      downloadLink.target = '_blank';
+      // @ts-ignore
+      previewContainer.innerHTML = '';
+      // @ts-ignore
+      previewContainer.appendChild(downloadLink);
+
+      // Trigger a click event on the download link
+      downloadLink.click();
+      // Ensure to revoke the object URL after use to free up resources
+      URL.revokeObjectURL(objectURL);
+    } catch (error) {
+      console.error('Error creating object URL:', error);
+    }
+  }
+
+  detectContentType(uint8Array: Uint8Array): string {
+
+
+    // Check for PDF magic number
+    if (uint8Array[0] === 0x25 && uint8Array[1] === 0x50 && uint8Array[2] === 0x44 && uint8Array[3] === 0x46) {
+      return 'application/pdf';
+    }
+
+    // Check for image magic numbers (jpeg, jpg, png)
+    if (uint8Array[0] === 0xFF && uint8Array[1] === 0xD8) {
+      return 'image/jpeg';
+    } else if (
+      uint8Array[0] === 0x89 &&
+      uint8Array[1] === 0x50 &&
+      uint8Array[2] === 0x4E &&
+      uint8Array[3] === 0x47 &&
+      uint8Array[4] === 0x0D &&
+      uint8Array[5] === 0x0A &&
+      uint8Array[6] === 0x1A &&
+      uint8Array[7] === 0x0A
+    ) {
+      return 'image/png';
+    }
+
+    // Default to application/octet-stream if content type cannot be determined
+    return 'application/octet-stream';
+  }
+
+
+
   submitEditDOC() {
     this.patchAdddocValues();
     if (this.formEditDOC.valid) {

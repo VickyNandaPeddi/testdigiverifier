@@ -302,16 +302,13 @@ public class liCheckToPerformController {
 
     @ApiOperation(value = "finds All submittedCandidates by date range and returns the data")
     @RequestMapping(value = "/findAllSubmittedCandidatesByDateRange", method = {RequestMethod.POST})
-    public ServiceOutcome<List<ConventionalVendorCandidatesSubmitted>> findAllConventionalVendorSubmittedCandidatesByDateRange
+    public ServiceOutcome<DashboardDto> findAllConventionalVendorSubmittedCandidatesByDateRange
             (@RequestHeader("Authorization") String authorization, @RequestBody DashboardDto dashboardDto) throws Exception {
-        ServiceOutcome<List<ConventionalVendorCandidatesSubmitted>> response = liCheckToPerformService.findAllConventionalVendorSubmittedCandidatesByDateRange(dashboardDto);
+        ServiceOutcome<DashboardDto> response = liCheckToPerformService.findAllConventionalVendorSubmittedCandidatesByDateRange(dashboardDto);
         response.setData(response.getData());
         response.setStatus("200");
         response.setOutcome(true);
         response.setMessage("candidates Fetched Sucessfully");
-        response.getData().forEach(resp -> {
-            log.info("Created Date {}", resp.getCreatedOn());
-        });
         return response;
     }
 
@@ -461,9 +458,8 @@ public class liCheckToPerformController {
     @ApiOperation("Get By Id ConventionalAttributesMaster")
     @GetMapping("/getConventionalAttributesMaster/{vendorCheckId}/{type}")
     public ResponseEntity<ServiceOutcome<?>> getConventionalAttributesMasterById(@PathVariable("vendorCheckId") Long sourceId,@PathVariable("type")String type) {
-        ServiceOutcome<?> svcSearchResult = liCheckToPerformService.getConventionalAttributesMasterById(sourceId,type);
-        return new ResponseEntity<ServiceOutcome<?>>(svcSearchResult, HttpStatus.OK);
-
+    	ServiceOutcome<?> svcSearchResult = liCheckToPerformService.getConventionalAttributesMasterById(sourceId,type);
+    	return new ResponseEntity<ServiceOutcome<?>>(svcSearchResult, HttpStatus.OK);
     }
 
     @GetMapping("/searchAllCandidate")
@@ -517,6 +513,17 @@ public class liCheckToPerformController {
     public ServiceOutcome<String> updateIdentityCheckDisableStatus(@PathVariable("checkUniqueId") String checkUniqueId, @PathVariable("enableStatus") String enableStatus) throws Exception {
         ServiceOutcome<String> stringServiceOutcome = liCheckToPerformService.updateIdentityCheckDisableStatus(checkUniqueId, enableStatus);
         return stringServiceOutcome;
+    }
+    
+    @ApiOperation("Update ConventionalAttributesMaster")
+    @PostMapping("/updateConventionalAttributesMaster/{attributeId}")
+    public ResponseEntity<ServiceOutcome<ConventionalAttributesMaster>> updateConventionalAttributesMaster(@RequestBody ConventionalAttributesMaster conventionalAttributesMaster,@PathVariable("attributeId") Long attributeId, @RequestHeader("Authorization") String authorization) {
+
+        System.out.println("ConventionalAttributesMaster**************" + conventionalAttributesMaster);
+        System.out.println("CONVENTIONALATTRIBUTE_ID ==================== "+attributeId);
+        ServiceOutcome<ConventionalAttributesMaster> svcSearchResult = liCheckToPerformService.updateConventionalAttributesMaster(conventionalAttributesMaster,attributeId);
+        return new ResponseEntity<ServiceOutcome<ConventionalAttributesMaster>>(svcSearchResult, HttpStatus.OK);
+
     }
 
 

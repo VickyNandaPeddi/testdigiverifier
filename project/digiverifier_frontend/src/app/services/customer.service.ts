@@ -281,5 +281,22 @@ export class CustomerService {
       headers: new HttpHeaders({'Accept': 'application/zip'}) // Request the ZIP file
     });
   }
+  getVendorUtilizationReport() {
+    return this.http.get(
+      `${environment.apiUrl}/api/report/getVendorUtilizationReport`
+    );
+  }
+  postVendorUtilizationReport(data: any) {
+    return this.http.post(
+      `${environment.apiUrl}/api/report/getVendorUtilizationReport`,
+      data
+    );
+  }
+  getVendorDetailsByStatus(data: any) {
+    return this.http.post(
+      `${environment.apiUrl}/api/report/getVendorDetailsByStatus`,
+      data
+    );
+  }
 
 }

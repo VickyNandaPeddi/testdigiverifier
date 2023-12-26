@@ -11,11 +11,7 @@ import com.aashdit.digiverifier.common.enums.ContentType;
 import com.aashdit.digiverifier.common.enums.FileType;
 import com.aashdit.digiverifier.common.model.Content;
 import com.aashdit.digiverifier.common.model.ServiceOutcome;
-import com.aashdit.digiverifier.config.admin.dto.LegalProceedingsDTO;
-import com.aashdit.digiverifier.config.admin.dto.VendorChecksDto;
-import com.aashdit.digiverifier.config.admin.dto.VendorInitiatDto;
-import com.aashdit.digiverifier.config.admin.dto.VendorUploadChecksDto;
-import com.aashdit.digiverifier.config.admin.dto.VendorcheckdashbordtDto;
+import com.aashdit.digiverifier.config.admin.dto.*;
 import com.aashdit.digiverifier.config.admin.model.CriminalCheck;
 import com.aashdit.digiverifier.config.admin.model.User;
 import com.aashdit.digiverifier.config.admin.model.VendorChecks;
@@ -51,7 +47,8 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-    import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
@@ -66,6 +63,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,6 +75,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.xml.bind.DatatypeConverter;
 
 import java.awt.image.BufferedImage;
@@ -816,6 +819,7 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
                     VendorInitiatDto vendorInitiatDto = new VendorInitiatDto();
                     vendorInitiatDto.setCandidateId(Long.valueOf(licheck.getRequestId()));
                     vendorInitiatDto.setDocumentname(licheckRequiredResponseDto.getDocumentName());
+                    vendorInitiatDto.setVendorCheckStatusMasterId(2l);
                     if (licheckRequiredResponseDto.getCandidateuploadS3Documents() != null) {
                         vendorInitiatDto.setDocumentUrl(licheckRequiredResponseDto.getCandidateuploadS3Documents().getPathkey());
                     }
@@ -1107,35 +1111,35 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
                 Long requestID = candidate.getLong("RequestID");
                 Boolean candidateExists = conventionalCandidatesSubmittedRepository.existsByRequestId(String.valueOf(requestID));
 //                if (candidateExists == true) {
-                if (candidate.getString("RequestType").equalsIgnoreCase("InsufficiencyClearance") == true) {
-                    ConventionalVendorCandidatesSubmitted conventionalVendorCandidatesSubmitted = conventionalCandidatesSubmittedRepository.findByRequestId(String.valueOf(requestID));
-                    if (conventionalVendorCandidatesSubmitted.getRequestType().equalsIgnoreCase("InsufficiencyClearance") == false) {
-                        conventionalVendorCandidatesSubmitted.setOldRequestType(conventionalVendorCandidatesSubmitted.getRequestType());
-                        conventionalVendorCandidatesSubmitted.setRequestType("InsufficiencyClearance");
-                        log.info("saving the oldrequest type");
-                        ConventionalVendorCandidatesSubmitted savedSubmittedCandidates = conventionalCandidatesSubmittedRepository.save(conventionalVendorCandidatesSubmitted);
+                    if (candidate.getString("RequestType").equalsIgnoreCase("InsufficiencyClearance") == true) {
+                        ConventionalVendorCandidatesSubmitted conventionalVendorCandidatesSubmitted = conventionalCandidatesSubmittedRepository.findByRequestId(String.valueOf(requestID));
+                        if (conventionalVendorCandidatesSubmitted.getRequestType().equalsIgnoreCase("InsufficiencyClearance") == false) {
+                            conventionalVendorCandidatesSubmitted.setOldRequestType(conventionalVendorCandidatesSubmitted.getRequestType());
+                            conventionalVendorCandidatesSubmitted.setRequestType("InsufficiencyClearance");
+                            log.info("saving the oldrequest type");
+                            ConventionalVendorCandidatesSubmitted savedSubmittedCandidates = conventionalCandidatesSubmittedRepository.save(conventionalVendorCandidatesSubmitted);
+                        }
                     }
-                }
 //                }
                 if (candidateExists == false) {
 //                    if (candidate.getString("RequestType").equalsIgnoreCase("InsufficiencyClearance") == false) {
-                    ConventionalVendorCandidatesSubmitted conventionalVendorCandidatesSubmitted = new ConventionalVendorCandidatesSubmitted();
-                    conventionalVendorCandidatesSubmitted.setCandidateId(candidate.getLong("CandidateID"));
-                    conventionalVendorCandidatesSubmitted.setVendorId(candidate.getString("VendorID"));
-                    conventionalVendorCandidatesSubmitted.setName(candidate.getString("Name"));
-                    conventionalVendorCandidatesSubmitted.setPsNo(candidate.getString("PSNO"));
-                    conventionalVendorCandidatesSubmitted.setRequestId(candidate.getString("RequestID"));
-                    conventionalVendorCandidatesSubmitted.setRequestType(candidate.getString("RequestType"));
-                    StatusMaster newupload = statusMasterRepository.findByStatusCode("NEWUPLOAD");
-                    conventionalVendorCandidatesSubmitted.setStatus(newupload);
-                    conventionalVendorCandidatesSubmitted.setCreatedBy(user);
-                    conventionalVendorCandidatesSubmitted.setCreatedOn(new Date());
-                    Random rnd = new Random();
-                    int n = 100000 + rnd.nextInt(900000);
-                    conventionalVendorCandidatesSubmitted.setApplicantId(n);
-                    ConventionalVendorCandidatesSubmitted savedSubmittedCandidates = conventionalCandidatesSubmittedRepository.save(conventionalVendorCandidatesSubmitted);
-                    emailSendCandidateList.add(savedSubmittedCandidates);
-                    log.info("saveConventionalVendorSubmittedCandidates() saved with candidateId" + savedSubmittedCandidates.getCandidateId());
+                        ConventionalVendorCandidatesSubmitted conventionalVendorCandidatesSubmitted = new ConventionalVendorCandidatesSubmitted();
+                        conventionalVendorCandidatesSubmitted.setCandidateId(candidate.getLong("CandidateID"));
+                        conventionalVendorCandidatesSubmitted.setVendorId(candidate.getString("VendorID"));
+                        conventionalVendorCandidatesSubmitted.setName(candidate.getString("Name"));
+                        conventionalVendorCandidatesSubmitted.setPsNo(candidate.getString("PSNO"));
+                        conventionalVendorCandidatesSubmitted.setRequestId(candidate.getString("RequestID"));
+                        conventionalVendorCandidatesSubmitted.setRequestType(candidate.getString("RequestType"));
+                        StatusMaster newupload = statusMasterRepository.findByStatusCode("NEWUPLOAD");
+                        conventionalVendorCandidatesSubmitted.setStatus(newupload);
+                        conventionalVendorCandidatesSubmitted.setCreatedBy(user);
+                        conventionalVendorCandidatesSubmitted.setCreatedOn(new Date());
+                        Random rnd = new Random();
+                        int n = 100000 + rnd.nextInt(900000);
+                        conventionalVendorCandidatesSubmitted.setApplicantId(n);
+                        ConventionalVendorCandidatesSubmitted savedSubmittedCandidates = conventionalCandidatesSubmittedRepository.save(conventionalVendorCandidatesSubmitted);
+                        emailSendCandidateList.add(savedSubmittedCandidates);
+                        log.info("saveConventionalVendorSubmittedCandidates() saved with candidateId" + savedSubmittedCandidates.getCandidateId());
 //                    }
                 }
                 if (candidate.getString("RequestType").equalsIgnoreCase("STOPBGV") == true) {
@@ -1807,13 +1811,13 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
                 ArrayList<String> keydata = new ArrayList<>();
                 statusCountMap.forEach((k, v) -> keydata.add(k));
                 keydata.stream().sorted();
-                if (keydata.stream().anyMatch("6"::equalsIgnoreCase)) {
-                    ConventionalVendorCandidatesSubmitted conventionalVendorCandidatesSubmitted = conventionalCandidatesSubmittedRepository.findByRequestId(candidatesSubmitted.getRequestId());
-                    conventionalVendorCandidatesSubmitted.setVerificationStatus("UNABLETOVERIFIY");
-                    conventionalCandidatesSubmittedRepository.save(conventionalVendorCandidatesSubmitted);
-                } else if (keydata.stream().anyMatch("4"::equalsIgnoreCase)) {
+                if (keydata.stream().anyMatch("4"::equalsIgnoreCase)) {
                     ConventionalVendorCandidatesSubmitted conventionalVendorCandidatesSubmitted = conventionalCandidatesSubmittedRepository.findByRequestId(candidatesSubmitted.getRequestId());
                     conventionalVendorCandidatesSubmitted.setVerificationStatus("MAJORDISCREPANCY");
+                    conventionalCandidatesSubmittedRepository.save(conventionalVendorCandidatesSubmitted);
+                } else if (keydata.stream().anyMatch("6"::equalsIgnoreCase)) {
+                    ConventionalVendorCandidatesSubmitted conventionalVendorCandidatesSubmitted = conventionalCandidatesSubmittedRepository.findByRequestId(candidatesSubmitted.getRequestId());
+                    conventionalVendorCandidatesSubmitted.setVerificationStatus("UNABLETOVERIFIY");
                     conventionalCandidatesSubmittedRepository.save(conventionalVendorCandidatesSubmitted);
                 } else if (keydata.stream().anyMatch("5"::equalsIgnoreCase)) {
                     ConventionalVendorCandidatesSubmitted conventionalVendorCandidatesSubmitted = conventionalCandidatesSubmittedRepository.findByRequestId(candidatesSubmitted.getRequestId());
@@ -1848,52 +1852,74 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
     @Autowired
     ConventionalVendorCandidatesSubmittedRepository conventionalVendorCandidatesSubmittedRepository;
 
-    public ServiceOutcome<List<ConventionalVendorCandidatesSubmitted>> findAllConventionalVendorSubmittedCandidatesByDateRange(DashboardDto dashboardDto) throws Exception {
-        ServiceOutcome<List<ConventionalVendorCandidatesSubmitted>> listServiceOutcome = new ServiceOutcome<>();
+    public ServiceOutcome<DashboardDto> findAllConventionalVendorSubmittedCandidatesByDateRange(DashboardDto dashboardDto) throws Exception {
+        ServiceOutcome<DashboardDto> listServiceOutcome = new ServiceOutcome<>();
 //         User user = (SecurityHelper.getCurrentUser()!=null)?SecurityHelper.getCurrentUser():userRepository.findByUserId(53l);;
         String strToDate = "";
         String strFromDate = "";
         List<ConventionalVendorCandidatesSubmitted> candidatesSubmittedList = new ArrayList<ConventionalVendorCandidatesSubmitted>();
         try {
+            Pageable pageable = null;
+            if (dashboardDto.getPageNumber() != null) {
+                pageable = PageRequest.of(Integer.parseInt(String.valueOf(dashboardDto.getPageNumber())), 10);
+            }
             strToDate = dashboardDto.getToDate() != null ? dashboardDto.getToDate() : ApplicationDateUtils.getStringTodayAsDDMMYYYY();
             strFromDate = dashboardDto.getFromDate() != null ? dashboardDto.getFromDate() : ApplicationDateUtils.subtractNoOfDaysFromDateAsDDMMYYYY(new SimpleDateFormat("dd/MM/yyyy").parse(strToDate), 7);
             Date startDate = formatter.parse(strFromDate + " 00:00:00");
             Date endDate = formatter.parse(strToDate + " 23:59:59");
             User user = userRepository.findById(dashboardDto.getUserId()).get();
             User byOrganizationAndRoleId = userRepository.findByOrganizationAndRoleId(user.getOrganization().getOrganizationId(), user.getRole().getRoleId(), user.getUserId());
+            Page<ConventionalVendorCandidatesSubmitted> allByUserIdAndDateRangeAll = null;
             if (byOrganizationAndRoleId != null) {
-                candidatesSubmittedList = conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRange(startDate, endDate);
+                allByUserIdAndDateRangeAll = conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRange(startDate, endDate, pageable);
+//                candidatesSubmittedList.addAll(allByUserIdAndDateRange.toList());
             }
-            if (candidatesSubmittedList.isEmpty() == false) {
+            if (allByUserIdAndDateRangeAll.isEmpty() == false) {
                 if (dashboardDto.getStatus() == null) {
                     dashboardDto.setStatus("NEWUPLOAD");
                 }
                 if (dashboardDto.getStatus().equalsIgnoreCase("NEWUPLOAD")) {
-                    listServiceOutcome.setData(candidatesSubmittedList);
+                    Page<ConventionalVendorCandidatesSubmitted> allByUserIdAndDateRange = conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRange(startDate, endDate, pageable);
+                    candidatesSubmittedList.addAll(allByUserIdAndDateRange.toList());
+                    System.out.println(allByUserIdAndDateRange.getTotalPages());
+                    DashboardDto dashboardDtoObj = new DashboardDto(strFromDate, strToDate, null, null, null,
+                            dashboardDto.getUserId(), dashboardDto.getStatus(), candidatesSubmittedList, dashboardDto.getPageNumber(), String.valueOf(allByUserIdAndDateRange.getTotalPages()));
+                    listServiceOutcome.setData(dashboardDtoObj);
                     if (candidatesSubmittedList.isEmpty()) {
-                        listServiceOutcome.setData(new ArrayList<>());
+                        listServiceOutcome.setData(new DashboardDto());
                     }
                 } else if (dashboardDto.getStatus().equalsIgnoreCase("STOPBGV")) {
-                    List<ConventionalVendorCandidatesSubmitted> collect = candidatesSubmittedList.stream().filter(cand -> cand.getStopCheckRecivedDate() != null).collect(Collectors.toList());
-                    listServiceOutcome.setData(collect);
-                    if (collect.isEmpty()) {
-                        listServiceOutcome.setData(new ArrayList<>());
+                    Page<ConventionalVendorCandidatesSubmitted> allByUserIdAndDateRange = conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRangeForStopBgv(startDate, endDate, pageable);
+                    candidatesSubmittedList.addAll(allByUserIdAndDateRange.toList());
+                    DashboardDto dashboardDtoObj = new DashboardDto(strFromDate, strToDate, null, null, null,
+                            dashboardDto.getUserId(), dashboardDto.getStatus(), candidatesSubmittedList, dashboardDto.getPageNumber(), String.valueOf(allByUserIdAndDateRange.getTotalPages()));
+                    listServiceOutcome.setData(dashboardDtoObj);
+                    if (candidatesSubmittedList.isEmpty()) {
+                        listServiceOutcome.setData(new DashboardDto());
                     }
                 } else if (dashboardDto.getStatus().equalsIgnoreCase("FASTTRACK")) {
-                    List<ConventionalVendorCandidatesSubmitted> collect = candidatesSubmittedList != null ? candidatesSubmittedList.stream().filter(c -> c.getFastTrack() != null && c.getFastTrack().equalsIgnoreCase("yes")).collect(Collectors.toList()) : null;
-                    listServiceOutcome.setData(collect);
-                    if (collect.isEmpty()) {
-                        listServiceOutcome.setData(new ArrayList<>());
+                    Page<ConventionalVendorCandidatesSubmitted> allByUserIdAndDateRange = conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRangeForFastTrack(startDate, endDate, pageable);
+                    candidatesSubmittedList.addAll(allByUserIdAndDateRange.toList());
+                    DashboardDto dashboardDtoObj = new DashboardDto(strFromDate, strToDate, null, null, null,
+                            dashboardDto.getUserId(), dashboardDto.getStatus(), candidatesSubmittedList, dashboardDto.getPageNumber(), String.valueOf(allByUserIdAndDateRange.getTotalPages()));
+                    listServiceOutcome.setData(dashboardDtoObj);
+                    if (candidatesSubmittedList.isEmpty()) {
+                        listServiceOutcome.setData(new DashboardDto());
                     }
                 } else {
-                    List<ConventionalVendorCandidatesSubmitted> collect = candidatesSubmittedList.stream().filter(cand -> cand.getStatus().getStatusCode().equalsIgnoreCase(dashboardDto.getStatus())).collect(Collectors.toList());
-                    listServiceOutcome.setData(collect);
-                    if (collect.isEmpty()) {
-                        listServiceOutcome.setData(new ArrayList<>());
+                    Page<ConventionalVendorCandidatesSubmitted> allByUserIdAndDateRange = conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRangeForStaus(dashboardDto.getStatus(), startDate, endDate, pageable);
+                    candidatesSubmittedList.addAll(allByUserIdAndDateRange.toList());
+                    DashboardDto dashboardDtoObj = new DashboardDto(strFromDate, strToDate, null, null, null,
+                            dashboardDto.getUserId(), dashboardDto.getStatus(), candidatesSubmittedList, dashboardDto.getPageNumber(), String.valueOf(allByUserIdAndDateRange.getTotalPages()));
+                    listServiceOutcome.setData(dashboardDtoObj);
+
+                    if (candidatesSubmittedList.isEmpty()) {
+                        listServiceOutcome.setData(new DashboardDto());
                     }
                 }
             } else {
-                listServiceOutcome.setData(new ArrayList<ConventionalVendorCandidatesSubmitted>());
+                listServiceOutcome.setData(new DashboardDto(strFromDate, strToDate, null, null, null,
+                        dashboardDto.getUserId(), dashboardDto.getStatus(), new ArrayList<ConventionalVendorCandidatesSubmitted>(), dashboardDto.getPageNumber(), "0"));
             }
 
 
@@ -1903,38 +1929,49 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
         return listServiceOutcome;
     }
 
-    public ServiceOutcome<List<ConventionalVendorCandidatesSubmitted>> findAllSubmittedCandidatesByDateRangeOnInterimAndFinal(DashboardDto dashboardDto) throws Exception {
-        ServiceOutcome<List<ConventionalVendorCandidatesSubmitted>> listServiceOutcome = new ServiceOutcome<>();
+    public ServiceOutcome<DashboardDto> findAllSubmittedCandidatesByDateRangeOnInterimAndFinal(DashboardDto dashboardDto) throws Exception {
+        ServiceOutcome<DashboardDto> listServiceOutcome = new ServiceOutcome<>();
         String strToDate = "";
         String strFromDate = "";
         List<ConventionalVendorCandidatesSubmitted> candidatesSubmittedList = new ArrayList<ConventionalVendorCandidatesSubmitted>();
         try {
+            Pageable pageable = null;
+            if (dashboardDto.getPageNumber() != null) {
+                pageable = PageRequest.of(Integer.parseInt(String.valueOf(dashboardDto.getPageNumber())), 10);
+            }
             strToDate = dashboardDto.getToDate() != null ? dashboardDto.getToDate() : ApplicationDateUtils.getStringTodayAsDDMMYYYY();
             strFromDate = dashboardDto.getFromDate() != null ? dashboardDto.getFromDate() : ApplicationDateUtils.subtractNoOfDaysFromDateAsDDMMYYYY(new SimpleDateFormat("dd/MM/yyyy").parse(strToDate), 7);
             Date startDate = formatter.parse(strFromDate + " 00:00:00");
             Date endDate = formatter.parse(strToDate + " 23:59:59");
             User user = userRepository.findById(dashboardDto.getUserId()).get();
+            Page<ConventionalVendorCandidatesSubmitted> allByUserIdAndDateRange = null;
             if (user.getRole().getRoleCode().equalsIgnoreCase("ROLE_ADMIN") || user.getRole().getRoleCode().equalsIgnoreCase("ROLE_PARTNERADMIN")) {
-                candidatesSubmittedList = conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRange(startDate, endDate);
+                allByUserIdAndDateRange = conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRange(startDate, endDate, pageable);
             }
-            if (candidatesSubmittedList.isEmpty() == false) {
+            if (allByUserIdAndDateRange.isEmpty() == false) {
                 if (dashboardDto.getStatus() == null) {
                     dashboardDto.setStatus("NEWUPLOAD");
                 }
                 if (dashboardDto.getStatus().equalsIgnoreCase("NEWUPLOAD")) {
-                    listServiceOutcome.setData(candidatesSubmittedList);
-                    if (candidatesSubmittedList.isEmpty()) {
+                    listServiceOutcome.setData(new DashboardDto(strFromDate, strToDate, null, null, null,
+                            dashboardDto.getUserId(), dashboardDto.getStatus(), new ArrayList<ConventionalVendorCandidatesSubmitted>(), dashboardDto.getPageNumber(), "0"));
+                    if (allByUserIdAndDateRange.isEmpty()) {
                         listServiceOutcome.setData(null);
                     }
                 } else {
-                    List<ConventionalVendorCandidatesSubmitted> collect = candidatesSubmittedList.stream().filter(cand -> cand.getStatus().getStatusCode().equalsIgnoreCase(dashboardDto.getStatus())).collect(Collectors.toList());
-                    listServiceOutcome.setData(collect);
-                    if (collect.isEmpty()) {
-                        listServiceOutcome.setData(null);
+                    allByUserIdAndDateRange = conventionalVendorCandidatesSubmittedRepository.findAllByUserIdAndDateRangeForStaus(dashboardDto.getStatus(), startDate, endDate, pageable);
+                    candidatesSubmittedList.addAll(allByUserIdAndDateRange.toList());
+                    DashboardDto dashboardDtoObj = new DashboardDto(strFromDate, strToDate, null, null, null,
+                            dashboardDto.getUserId(), dashboardDto.getStatus(), candidatesSubmittedList, dashboardDto.getPageNumber(), String.valueOf(allByUserIdAndDateRange.getTotalPages()));
+                    listServiceOutcome.setData(dashboardDtoObj);
+                    listServiceOutcome.setData(dashboardDtoObj);
+                    if (allByUserIdAndDateRange.isEmpty()) {
+                        listServiceOutcome.setData(new DashboardDto());
                     }
                 }
             } else {
-                listServiceOutcome.setData(new ArrayList<ConventionalVendorCandidatesSubmitted>());
+                listServiceOutcome.setData(new DashboardDto(strFromDate, strToDate, null, null, null,
+                        dashboardDto.getUserId(), dashboardDto.getStatus(), new ArrayList<ConventionalVendorCandidatesSubmitted>(), dashboardDto.getPageNumber(), "0"));
             }
 
 
@@ -2055,7 +2092,7 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
                 if (conventionalVendorCandidatesSubmitted.getVerificationStatus() != null) {
                     if (conventionalVendorCandidatesSubmitted.getVerificationStatus().equalsIgnoreCase("UNABLETOVERIFIY")) {
                         candidateReportDTO.setVerificationStatus(ConventionalVerificationStatus.UNABLETOVERIFIY);
-                        candidateReportDTO.setColorCode("ORANGE");
+                        candidateReportDTO.setColorCode("AMBER");
                     }
                     if (conventionalVendorCandidatesSubmitted.getVerificationStatus().equalsIgnoreCase("MAJORDISCREPANCY")) {
                         candidateReportDTO.setVerificationStatus(ConventionalVerificationStatus.MAJORDISCREPANCY);
@@ -2067,7 +2104,7 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
                     }
                     if (conventionalVendorCandidatesSubmitted.getVerificationStatus().equalsIgnoreCase("INSUFFICIENCY")) {
                         candidateReportDTO.setVerificationStatus(ConventionalVerificationStatus.INSUFFICIENCY);
-                        candidateReportDTO.setColorCode("ORANGE");
+                        candidateReportDTO.setColorCode("AMBER");
                     }
                     if (conventionalVendorCandidatesSubmitted.getVerificationStatus().equalsIgnoreCase("INPROGRESS")) {
                         candidateReportDTO.setVerificationStatus(ConventionalVerificationStatus.INPROGRESS);
@@ -2097,6 +2134,65 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
                 candidateReportDTO.setComments("");
                 log.info("request id" + String.valueOf(candidate.getConventionalRequestId()));
                 List<ConventionalVendorliChecksToPerform> byCandidateId = liCheckToPerformRepository.findByRequestId(String.valueOf(candidate.getConventionalRequestId()));
+//                byCandidateId = byCandidateId.stream()
+//                        .sorted(Comparator.comparing(entity -> {
+//                            String checkName = entity.getCheckName();
+//                            if (checkName.startsWith("E")) {
+//                                return "0" + checkName; // Prefix 'E' with '0' to make it come first
+//                            } else if (checkName.startsWith("A")) {
+//                                return "1" + checkName; // Prefix 'A' with '1' to make it come after 'E'
+//                            }
+//                            else if (checkName.startsWith("I")) {
+//                                return "2" + checkName; // Prefix 'A' with '1' to make it come after 'E'
+//                            }
+//                            else if (checkName.startsWith("C")) {
+//                                return "3" + checkName; // Prefix 'A' with '1' to make it come after 'E'
+//                            }
+//
+//                            else if (checkName.startsWith("G")) {
+//                                return "4" + checkName; // Prefix 'A' with '1' to make it come after 'E'
+//                            }
+//                            else {
+//                                return "5" + checkName; // Other check names
+//                            }
+//                        }))
+//                        .collect(Collectors.toList());
+                byCandidateId = byCandidateId.stream().filter(en -> en.getSource() != null)
+                        .sorted(Comparator.comparing(entity -> {
+
+                            Long sourceId = entity.getSource().getSourceId();
+
+                            // Customize the sorting order based on source ID matches
+                            List<Long> educationIds = Arrays.asList(24L, 25L, 26L, 27L, 45L);
+                            List<Long> employmentIds = Arrays.asList(28L, 29L, 44L, 46L, 50L);
+                            List<Long> addressIds = Arrays.asList(19L, 20L, 21L, 22L, 23L, 48L);
+                            List<Long> identityIds = Arrays.asList(11L, 12L, 13L, 14L);
+                            List<Long> ofacIds = Arrays.asList(39L);
+                            List<Long> criminalIds = Arrays.asList(15l,16l,17l,18l,49l,51l);
+                            List<Long> globalIds = Arrays.asList(38L);
+                            if (educationIds.contains(sourceId)) {
+                                return 1L; // education
+                            } else if (employmentIds.contains(sourceId)) {
+                                return 2L; // employment
+                            } else if (addressIds.contains(sourceId)) {
+                                return 3L; // address
+                            } else if (identityIds.contains(sourceId)) {
+                                return 4L; // identity
+                            } else if (ofacIds.contains(sourceId)) {
+                                return 5L; // ofac
+                            }
+                            else if (criminalIds.contains(sourceId)) {
+                                return 6L; // criminal
+                            }
+                            else if (globalIds.contains(sourceId)) {
+                                return 7L; // global
+                            }else {
+                                return 8L; // other than above
+                            }
+                        }))
+                        .collect(Collectors.toList());
+
+
                 log.warn("check data outside report" + byCandidateId);
                 HashMap<String, LegalProceedingsDTO> criminalCheckListMap = new HashMap<>();
                 if (byCandidateId.isEmpty() == false) {
@@ -2113,8 +2209,9 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
 
                     licheckRequiredResponseDtos.forEach(data -> {
                         String modifiedCheckName = data.getCheckName().toLowerCase().replaceAll("[\\s-]", "");
-                        log.info("modified Check name");
-                        if (modifiedCheckName.contains("education")) {
+
+
+                        if (modifiedCheckName.contains("education") && !modifiedCheckName.contains("educationhighest")) {
                             List<ConventionalCandidateCafEducation> conventionalCandidateCafEducations = conventionalCafCandidateEducationRepository.findByConventionalRequestId(Long.valueOf(conventionalVendorCandidatesSubmitted.getRequestId()));
                             if (conventionalCandidateCafEducations.isEmpty() == false) {
                                 conventionalCandidateCafEducations.forEach(convdata -> {
@@ -2123,15 +2220,43 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
                                     boolean contains = modifiedCheckName.contains(degreetype);
                                     if (contains == true) {
                                         CandidateCafEducation candidateCafEducation = candidateCafEducationRepository.findById(convdata.getCandidateCafEducationId()).get();
-                                        data.setDisableStatus(candidateCafEducation.getSchoolOrCollegeName() + "," + candidateCafEducation.getBoardOrUniversityName());
-                                    }
-                                    if (contains == false) {
-                                        CandidateCafEducation candidateCafEducation = candidateCafEducationRepository.findById(convdata.getCandidateCafEducationId()).get();
-                                        data.setDisableStatus(candidateCafEducation.getSchoolOrCollegeName() + "," + candidateCafEducation.getBoardOrUniversityName());
-                                        log.info("false condition");
+                                        data.setDisableStatus(candidateCafEducation.getQualificationType());
                                     }
                                     log.info("End Education Type setted" + data.getDisableStatus());
                                 });
+                            }
+                        }
+                        if (modifiedCheckName.contains("educationhighest")) {
+                            List<ConventionalCandidateCafEducation> conventionalCandidateCafEducations = conventionalCafCandidateEducationRepository.findByConventionalRequestId(Long.valueOf(conventionalVendorCandidatesSubmitted.getRequestId()));
+                            if (conventionalCandidateCafEducations.isEmpty() == false) {
+                                conventionalCandidateCafEducations.forEach(convdata -> {
+                                    String degreetype = convdata.getDegreeType().toLowerCase().replaceAll("[\\s-]", "");
+                                    log.info("Check NAme" + modifiedCheckName + "===" + "    Education -   " + degreetype);
+                                    CandidateCafEducation candidateCafEducation = candidateCafEducationRepository.findById(convdata.getCandidateCafEducationId()).get();
+                                    if (degreetype.toLowerCase().contains("undergraduate")) {
+
+                                        data.setDisableStatus(candidateCafEducation.getQualificationType());
+                                    } else if (degreetype.toLowerCase().contains("postgraduate")) {
+                                        // Handle postgraduate case
+                                        data.setDisableStatus(candidateCafEducation.getQualificationType());
+
+                                    } else if (degreetype.toLowerCase().contains("diploma")) {
+                                        // Handle diploma case
+
+                                        data.setDisableStatus(candidateCafEducation.getQualificationType());
+                                    } else if (degreetype.toLowerCase().contains("highschool")) {
+                                        // Handle high school case
+
+                                        data.setDisableStatus(candidateCafEducation.getQualificationType());
+                                    } else if (degreetype.toLowerCase().contains("highest")) {
+                                        // Handle highest education case
+                                        data.setDisableStatus(candidateCafEducation.getQualificationType());
+                                    } else {
+
+                                        data.setDisableStatus(candidateCafEducation.getQualificationType());
+                                    }
+                                });
+
                             }
                         }
                         if (modifiedCheckName.contains("address")) {
@@ -2140,17 +2265,23 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
                                 conventionalCafAddresses.forEach(convdata -> {
                                     String addressType = convdata.getAddressType().toLowerCase().replaceAll("[\\s-]", "");
                                     log.info("Check NAme" + modifiedCheckName + "===" + "Address  type-   " + addressType);
-                                    boolean contains = modifiedCheckName.contains(addressType);
-                                    if (contains == true) {
-                                        CandidateCafAddress candidateCafAddress = candidateCafAddressRepository.findById(convdata.getCandidateCafAddressId()).get();
-                                        data.setDisableStatus(candidateCafAddress.getCity() + "," + candidateCafAddress.getState());
-                                    }
-                                    if (contains == true) {
-                                        CandidateCafAddress candidateCafAddress = candidateCafAddressRepository.findById(convdata.getCandidateCafAddressId()).get();
-                                        data.setDisableStatus(candidateCafAddress.getCity() + "," + candidateCafAddress.getState());
+                                    if (modifiedCheckName.contains("present")) {
+                                        boolean contains = modifiedCheckName.replaceAll("present", "current").contains(addressType);
+                                        if (contains == true) {
+                                            CandidateCafAddress candidateCafAddress = candidateCafAddressRepository.findById(convdata.getCandidateCafAddressId()).get();
+                                            data.setDisableStatus(candidateCafAddress.getCity() + "," + candidateCafAddress.getState());
+                                        }
+                                        log.info("End Address Type setted" + data.getDisableStatus());
+
+                                    } else {
+                                        boolean contains = modifiedCheckName.contains(addressType);
+                                        if (contains == true) {
+                                            CandidateCafAddress candidateCafAddress = candidateCafAddressRepository.findById(convdata.getCandidateCafAddressId()).get();
+                                            data.setDisableStatus(candidateCafAddress.getCity() + "," + candidateCafAddress.getState());
+                                        }
+                                        log.info("End Address Type setted" + data.getDisableStatus());
 
                                     }
-                                    log.info("End Address Type setted" + data.getDisableStatus());
 
                                 });
                             }
@@ -2165,13 +2296,12 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
                                     if (contains == true) {
                                         CandidateCafExperience candidateCafExperience = candidateCafExperienceRepository.findById(convdata.getCandidateCafExperience()).get();
                                         data.setDisableStatus(candidateCafExperience.getCandidateEmployerName());
-                                    }
-                                    if (contains == false) {
-                                        CandidateCafExperience candidateCafExperience = candidateCafExperienceRepository.findById(convdata.getCandidateCafExperience()).get();
-                                        data.setDisableStatus(candidateCafExperience.getCandidateEmployerName());
+                                        log.info(modifiedCheckName + "  true condition       -candidate employer name           -" + candidateCafExperience.getCandidateEmployerName());
                                     }
                                     log.info("End Employment Type setted" + data.getDisableStatus());
                                 });
+
+
                             }
                         }
                         if (modifiedCheckName.contains("pan")) {
@@ -2215,9 +2345,12 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
                     final ZoneId id = ZoneId.systemDefault();
 //                    candidateVerificationState.setCaseInitiationTime(ZonedDateTime.ofInstant(candidate.getCreatedOn().toInstant(), id));
                 }
+                ZoneId zoneId = ZoneId.of("Asia/Kolkata");
+                ZonedDateTime currentDatetime = ZonedDateTime.now(zoneId);
+                candidateReportDTO.setCurrentDate(DateUtil.convertToString(currentDatetime));
+
                 Instant instant = conventionalVendorCandidatesSubmitted.getCreatedOn().toInstant();
                 log.info("instatnt" + instant.toString());
-                ZoneId zoneId = ZoneId.of("Asia/Kolkata");
                 ZonedDateTime zonedDateTime = instant.atZone(zoneId);
                 log.info("case initiation datettime" + zonedDateTime);
                 candidateReportDTO.setCaseInitiationDate(DateUtil.convertToString(zonedDateTime));
@@ -2241,11 +2374,38 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
                 candidateReportDTO.setInterimReportDate(DateUtil.convertToString(candidateVerificationState.getInterimReportTime()));
                 Long organizationId = organization.getOrganizationId();
                 List<OrganizationExecutive> organizationExecutiveByOrganizationId = organizationService.getOrganizationExecutiveByOrganizationId(organizationId);
+                List<Map<String, List<Map<String, String>>>> dataList = new ArrayList<>();
                 List<ExecutiveSummaryDto> executiveSummaryDtos = new ArrayList<>();
                 List<VendorChecks> vendorList = vendorChecksRepository.findAllByCandidateCandidateId(candidate.getCandidateId());
-                List<Map<String, List<Map<String, String>>>> dataList = new ArrayList<>();
+                vendorList = vendorList.stream()
+                        .sorted(Comparator.comparing(entity -> {
+                            Long sourceId = entity.getSource().getSourceId();
+                            // Customize the sorting order based on source ID matches
+                            List<Long> educationIds = Arrays.asList(24L, 25L, 26L, 27L, 45L);
+                            List<Long> employmentIds = Arrays.asList(28L, 29L, 44L, 46L, 50L);
+                            List<Long> addressIds = Arrays.asList(19L, 20L, 21L, 22L, 23L, 48L);
+                            List<Long> identityIds = Arrays.asList(11L, 12L, 13L, 14L);
+                            List<Long> ofacIds = Arrays.asList(39L);
+                            if (educationIds.contains(sourceId)) {
+                                return 1L; // education
+                            } else if (employmentIds.contains(sourceId)) {
+                                return 2L; // employment
+                            } else if (addressIds.contains(sourceId)) {
+                                return 3L; // address
+                            } else if (identityIds.contains(sourceId)) {
+                                return 4L; // identity
+                            } else if (ofacIds.contains(sourceId)) {
+                                return 5L; // ofac
+                            } else {
+                                return 6L; // criminal, global
+                            }
+                        }))
+                        .collect(Collectors.toList());
 
                 VendorUploadChecksDto vendorUploadChecksDto = null;
+                vendorList=vendorList.stream().filter(vca->{
+                   return vca.getVendorCheckStatusMaster()!=null &&  vca.getVendorCheckStatusMaster().getVendorCheckStatusMasterId() != 3l;
+                }).collect(Collectors.toList());
                 for (VendorChecks vendorChecks : vendorList) {
                     User user = userRepository.findByUserId(vendorChecks.getVendorId());
                     VendorUploadChecks vendorChecksss = vendorUploadChecksRepository.findByVendorChecksVendorcheckId(vendorChecks.getVendorcheckId());
@@ -2264,23 +2424,32 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
                             }
                             vendorAttributeDto.setSourceName(conventionalVendorliChecksToPerform.getCheckName());
                             vendorAttributeDtos.add(vendorAttributeDto);
-
                         } else {
                             vendorAttributeDto.setSourceName(conventionalVendorliChecksToPerform.getCheckName());
                             vendorAttributeDto.setVendorAttirbuteValue(vendorChecksss.getVendorAttirbuteValue());
                             vendorAttributeDtos.add(vendorAttributeDto);
                         }
                         vendorUploadChecksDto = new VendorUploadChecksDto(user.getUserFirstName(), vendorChecksss.getVendorChecks().getVendorcheckId(), vendorChecksss.getVendorUploadedDocument(), vendorChecksss.getDocumentname(), vendorChecksss.getAgentColor().getColorName(), vendorChecksss.getAgentColor().getColorHexCode(), null);
+//                        if (vendorUploadChecksDto.getDocument() != null) {
+//                            File tempFile = File.createTempFile(vendorUploadChecksDto.getDocumentname(), ".pdf");
+//                            FileOutputStream fos = new FileOutputStream(tempFile);
+//                            fos.write(vendorUploadChecksDto.getDocument());
+//                            fos.close();
+//                            log.info("temp file" + tempFile);
+//                        }
                         vendorUploadChecksDto.setVendorAttirbuteValue(vendorAttributeDtos);
                         vendordocDtoList.add(vendorUploadChecksDto);
 
                     }
                 }
-                candidateReportDTO.setVendorProofDetails(vendordocDtoList);
-
+                List<VendorUploadChecksDto> collect1 = vendordocDtoList.stream().filter(da -> da.getVendorAttirbuteValue() != null).collect(Collectors.toList());
+                candidateReportDTO.setVendorProofDetails(collect1);
                 candidateReportDTO.setDataList(dataList);
+//                log.info("candidate report dtp" + candidateReportDTO.toString());
+
                 log.info("====================REQUESTID==================" + conventionalVendorCandidatesSubmitted.getRequestId());
                 List<ConventionalVendorliChecksToPerform> allLichecks = liCheckToPerformRepository.findByRequestId(conventionalVendorCandidatesSubmitted.getRequestId());
+
                 List<LicheckRequiredResponseDto> licheckIdsList = new ArrayList<>();
                 ArrayList<VendorChecksDto> vendorCheckDtos = new ArrayList<>();
 
@@ -2292,6 +2461,7 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
                     if (licheck.getCheckStatus().getCheckStatusCode().equals("CLEAR") ||
                             licheck.getCheckStatus().getCheckStatusCode().equals("MINORDISCREPANCY") ||
                             licheck.getCheckStatus().getCheckStatusCode().equals("QCPENDING") ||
+                            licheck.getCheckStatus().getCheckStatusCode().equals("UNABLETOVERIFY") ||
                             licheck.getCheckStatus().getCheckStatusCode().equals("MAJORDISCREPANCY")) {
 
                         String checkName = licheck.getCheckName();
@@ -2328,6 +2498,7 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
                                 (vendorCheck.getVendorCheckStatusMaster().getCheckStatusCode().equals("CLEAR") ||
                                         vendorCheck.getVendorCheckStatusMaster().getCheckStatusCode().equals("MINORDISCREPANCY") ||
                                         vendorCheck.getVendorCheckStatusMaster().getCheckStatusCode().equals("QCPENDING") ||
+                                        vendorCheck.getVendorCheckStatusMaster().getCheckStatusCode().equals("UNABLETOVERIFY") ||
                                         vendorCheck.getVendorCheckStatusMaster().getCheckStatusCode().equals("MAJORDISCREPANCY"))) {
 
                             Long vendorCheckIds = vendorCheck.getVendorcheckId();
@@ -2379,36 +2550,49 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
                         log.info("Vendor Upload Documents ====== {}" + vendorUploadCheck.getVendorUploadedDocument());
 
                         byte[] documentBytes = vendorUploadCheck.getVendorUploadedDocument();
-                        if (documentBytes != null) {
-                            // Encode the document to Base64
-                            // Convert the document to image bytes
-                            List<byte[]> imageBytes = convertPDFToImage(documentBytes);
 
-                            if (imageBytes != null && !imageBytes.isEmpty()) {
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        String vendorUploadedImages = vendorUploadCheck.getVendorUploadedImage();
+
+                        try {
+                            if (vendorUploadedImages != null) {
+                                List<Map<String, List<String>>> decodedImageList = objectMapper.readValue(vendorUploadedImages, new TypeReference
+                                        <List<Map<String, List<String>>>>() {
+                                });
+
+                                List<String> allEncodedImages = decodedImageList.stream()
+                                        .flatMap(imageMap -> imageMap.values().stream())
+                                        .flatMap(List::stream)
+                                        .collect(Collectors.toList());
+
                                 // Loop through each image byte array and encode it to Base64
                                 List<String> encodedImagesForDocument = new ArrayList<>();
 
+                                log.info("encodedImagesForDocument::::: {}" + encodedImagesForDocument.size());
+                                encodedImageMap.put(nameOfCheck, allEncodedImages);
+                            } else if (documentBytes != null) {
+                                List<byte[]> imageBytes = convertPDFToImage(documentBytes);
+                                List<String> encodedImagesForDocument = new ArrayList<>();
                                 for (int j = 0; j < imageBytes.size(); j++) {
                                     byte[] imageBytess = imageBytes.get(j);
                                     String encodedImage = Base64.getEncoder().encodeToString(imageBytess);
                                     encodedImagesForDocument.add(encodedImage);
 
                                 }
-                                log.info("encodedImagesForDocument::::: {}" + encodedImagesForDocument.size());
                                 encodedImageMap.put(nameOfCheck, encodedImagesForDocument);
 
                             } else {
-                                log.info("Image bytes are null {}");
+                                log.info("Vendor uploaded document is null {}");
                                 encodedImageMap.put(nameOfCheck, null);
 
                             }
-                        } else {
-                            log.info("Vendor uploaded document is null {}");
-                            encodedImageMap.put(nameOfCheck, null);
 
+                            encodedImagesList.add(encodedImageMap);
+
+                        } catch (JsonProcessingException e) {
+                            // Handle the exception (e.g., log or throw)
+                            e.printStackTrace();
                         }
-
-                        encodedImagesList.add(encodedImageMap);
 
                     }
                 }
@@ -2461,7 +2645,7 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
 //                    });
                     PdfUtil.mergePdfFiles(collect, new FileOutputStream(mergedFile.getPath()));
                     log.info("merged file path" + mergedFile.getPath());
-                    String path = "Candidate/".concat(candidateId + "/Generated".concat("/").concat(reportType.name()).concat(".pdf"));
+                    String path = "Candidate/".concat(candidateId + "/Generated".concat("/").concat(conventionalVendorCandidatesSubmitted.getRequestId() + "_" + conventionalVendorCandidatesSubmitted.getName() + "_" + reportType.name()).concat(".pdf"));
                     String pdfUrl = awsUtils.uploadFileAndGetPresignedUrl(DIGIVERIFIER_DOC_BUCKET_NAME, path, mergedFile);
                     Content content = new Content();
                     content.setCandidateId(candidate.getCandidateId());
@@ -2496,11 +2680,11 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
 //                email.setContent(String.format(emailContent, agent.getUserFirstName(), candidate.getCandidateName(), reportTypeStr));
 //                emailSentTask.send(email);
                     // delete files
-//                    files.stream().forEach(file -> file.delete());
+                    files.stream().forEach(file -> file.delete());
 
                     stringServiceOutcome.setData(pdfUrl);
-//                    mergedFile.delete();
-//                    report.delete();
+                    mergedFile.delete();
+                    report.delete();
 
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
@@ -2514,29 +2698,30 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
         }
         return stringServiceOutcome;
     }
-
-
+    
+    
     public List<byte[]> convertPDFToImage(byte[] pdfBytes) throws IOException {
-        try (PDDocument document = PDDocument.load(new ByteArrayInputStream(pdfBytes))) {
-            PDFRenderer pdfRenderer = new PDFRenderer(document);
-            int numberOfPages = document.getNumberOfPages();
+	    try (PDDocument document = PDDocument.load(new ByteArrayInputStream(pdfBytes))) {
+	        PDFRenderer pdfRenderer = new PDFRenderer(document);
+	        int numberOfPages = document.getNumberOfPages();
 
-            List<byte[]> imageBytesList = new ArrayList<>();
+	        List<byte[]> imageBytesList = new ArrayList<>();
 
-            for (int pageIndex = 0; pageIndex < numberOfPages; pageIndex++) {
-                BufferedImage image = pdfRenderer.renderImageWithDPI(pageIndex, 300);
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                javax.imageio.ImageIO.write(image, "png", baos);
-                imageBytesList.add(baos.toByteArray());
-            }
+	        for (int pageIndex = 0; pageIndex < numberOfPages; pageIndex++) {
+	            BufferedImage image = pdfRenderer.renderImageWithDPI(pageIndex, 300);
+	            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	            javax.imageio.ImageIO.write(image, "png", baos);
+	            imageBytesList.add(baos.toByteArray());
+	        }
 
-            log.info("Number of Images: {}" + imageBytesList.size());
+	        log.info("Number of Images: {}" + imageBytesList.size());
 
 
-            // If needed, you can return the list of image bytes
-            return imageBytesList;
-        }
-    }
+	        
+	        // If needed, you can return the list of image bytes
+	        return imageBytesList;
+	    }
+	}
 
 
     @Transactional
@@ -3527,9 +3712,28 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
     }
 
 
-    @Override
-    public ServiceOutcome<T> getConventionalAttributesMasterById(Long vendorCheckId, String type) {
+//    @Override
+//    public ServiceOutcome<ConventionalAttributesMaster> getConventionalAttributesMasterById(Long vendorCheckId) {
+//
+//        ServiceOutcome<ConventionalAttributesMaster> svcSearchResult = new ServiceOutcome<ConventionalAttributesMaster>();
+//        try {
+//            VendorChecks byVendorcheckId = vendorChecksRepository.findByVendorcheckId(vendorCheckId);
+//
+//            List<ConventionalAttributesMaster> all = conventionalAttributesMasterRepository.findAll();
+//            List<ConventionalAttributesMaster> matchingEntities = all.stream().filter(attr -> attr.getSourceIds().contains(byVendorcheckId.getSource().getSourceId())).collect(Collectors.toList());
+//
+//
+//            svcSearchResult.setMessage("Fetched Data");
+//            svcSearchResult.setData(matchingEntities.get(0));
+//
+//        } catch (Exception e) {
+//
+//        }
+//        return svcSearchResult;
+//
+//    }
 
+    public ServiceOutcome<T> getConventionalAttributesMasterById(Long vendorCheckId, String type) {
         ServiceOutcome<T> svcSearchResult = new ServiceOutcome<T>();
         try {
             VendorChecks byVendorcheckId = vendorChecksRepository.findByVendorcheckId(vendorCheckId);
@@ -3551,43 +3755,11 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
                 svcSearchResult.setData(null); // Set to appropriate value or handle accordingly
             }
 
-
         } catch (Exception e) {
-            log.info("exception in getVendorCheckAttributes   :" + e.getMessage());
+            log.info("exception in getVendorCheckAttributes :" + e.getMessage());
         }
         return svcSearchResult;
-
     }
-//    public ServiceOutcome<T> getConventionalAttributesMasterById(Long vendorCheckId) {
-//
-//        ServiceOutcome<T> svcSearchResult = new ServiceOutcome<T>();
-//        try {
-//            VendorChecks byVendorcheckId = vendorChecksRepository.findByVendorcheckId(vendorCheckId);
-//            List<ConventionalAttributesMaster> all = conventionalAttributesMasterRepository.findAll();
-//            List<ConventionalAttributesMaster> matchingEntities = all.stream()
-//                    .filter(attr -> attr.getSourceIds().contains(byVendorcheckId.getSource().getSourceId()))
-//                    .collect(Collectors.toList());
-//            svcSearchResult.setMessage("Fetched Data");
-//            if (matchingEntities.size() > 0) {
-//                ConventionalAttributesMaster firstMatchingEntity = matchingEntities.get(0);
-//
-//                if (byVendorcheckId.getSource().getSourceId()==38l) {
-//                    svcSearchResult.setData((T) matchingEntities);
-//                } else {
-//                    svcSearchResult.setData((T) firstMatchingEntity);
-//                }
-//            } else {
-//                svcSearchResult.setMessage("No matching data found");
-//                svcSearchResult.setData(null); // Set to appropriate value or handle accordingly
-//            }
-//
-//
-//        } catch (Exception e) {
-//            log.info("exception in getVendorCheckAttributes   :" + e.getMessage());
-//        }
-//        return svcSearchResult;
-//    }
-
 
     //    public ServiceOutcome<DashboardDto> searchAllCandidate(String searchText) {
 //        ServiceOutcome<DashboardDto> svcSearchResult = new ServiceOutcome<>();
@@ -3840,5 +4012,39 @@ public class liCheckToPerformServiceImpl<T> implements liCheckToPerformService {
         }
         return stringServiceOutcome;
     }
+
+
+	@Override
+	public ServiceOutcome<ConventionalAttributesMaster> updateConventionalAttributesMaster(
+			ConventionalAttributesMaster conventionalAttributesMaster,Long attributeId) {
+
+        ServiceOutcome<ConventionalAttributesMaster> svcSearchResult = new ServiceOutcome<ConventionalAttributesMaster>();
+
+		try {
+			ConventionalAttributesMaster conventionalId = conventionalAttributesMasterRepository.findByAttributeId(attributeId);
+			if(conventionalId != null) {
+			    ConventionalAttributesMaster updateAttributes = conventionalId;
+			    updateAttributes.setCheckAttibutes(conventionalAttributesMaster.getCheckAttibutes());
+			    updateAttributes.setSourceIds(conventionalAttributesMaster.getSourceIds());	
+			    
+			    System.out.println("UPDATEATTRIBUTE ================ "+updateAttributes.getCheckAttibutes().toString());
+			    ConventionalAttributesMaster save = conventionalAttributesMasterRepository.save(updateAttributes);
+			    
+			    
+			    svcSearchResult.setData(save);
+			    svcSearchResult.setOutcome(true);
+			    
+			}
+			else {
+			    System.out.println("No entity found with attributeId: " + attributeId);
+			    svcSearchResult.setOutcome(false);
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return svcSearchResult;
+	}
 }
 

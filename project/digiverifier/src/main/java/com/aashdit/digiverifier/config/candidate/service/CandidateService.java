@@ -24,6 +24,8 @@ public interface CandidateService {
     ServiceOutcome<DashboardDto> getUploadDetailsStatusAndCountConventional(DashboardDto dashboardDto);
 
     ServiceOutcome<DashboardDto> findConvCandidateForInterimAndFinal(DashboardDto dashboardDto);
+    
+    ServiceOutcome<DashboardDto> findConVendorStatusCount(DashboardDto dashboardDto);
 
     ServiceOutcome<List> saveConventionalCandidateDrugInformation(FetchVendorConventionalCandidateDto fetchVendorConventionalCandidateDto);
 

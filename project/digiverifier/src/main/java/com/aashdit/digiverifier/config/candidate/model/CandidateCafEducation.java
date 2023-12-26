@@ -122,6 +122,10 @@ public class CandidateCafEducation implements Serializable {
     @JoinColumn(name = "suspect_clg_master_id")
     private SuspectClgMaster suspectClgMaster;
 
-    @Column(name = "course_name")
-    private String courseName;
+    @Column(name = "qualification_type")
+    private String qualificationType;
+
+    @Column(name = "country")
+    private String country;
+
 }

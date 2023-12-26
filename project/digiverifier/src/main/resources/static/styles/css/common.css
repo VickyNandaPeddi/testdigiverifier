@@ -48,12 +48,16 @@
         content: url("https://digiverifier-new.s3.ap-south-1.amazonaws.com/Assets/digiverifier_logo_2.jpg");
         transform: scale(.2);
     }
-    @bottom-left {
-        content: "Registered Office: CROSSBOW Global Marketplace Solutions Private Limited No.18 & 18/1, Bikaner Signature Towers, Richmond Rd, Bengaluru, Karnataka 560025.";
+   @bottom-left {
+        content: "Registered Office: CROSSBOW Global Marketplace\A"
+                 "Solutions Private Limited\A"
+                 "No.18 & 18/1, Bikaner Signature Towers, Richmond\A"
+                 "Rd, Bengaluru, Karnataka 560025.";
         font-family: sans-serif;
         font-weight: lighter;
         font-size: 10px;
-        max-width : 40%
+        max-width : 40%;
+        white-space: pre-line;
     }
 
     @bottom-center {

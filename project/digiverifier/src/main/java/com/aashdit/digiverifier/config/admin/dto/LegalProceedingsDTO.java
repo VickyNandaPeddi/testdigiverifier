@@ -9,8 +9,10 @@ import java.util.List;
 @Getter
 @Setter
 public class LegalProceedingsDTO {
-    private CivilProceedingsDTO civilProceedings;
-    private CriminalProceedingsDTO criminalProceedings;
+	
+	
+    private List<CivilProceedingsDTO> civilProceedingsList;
+    private List<CriminalProceedingsDTO> criminalProceedingsList;
     private List<CriminalCheck> civilProceedingList;
     private List<CriminalCheck> criminalProceedingList;
 }

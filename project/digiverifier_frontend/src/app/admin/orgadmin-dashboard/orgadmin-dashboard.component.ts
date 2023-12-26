@@ -51,13 +51,27 @@ export class OrgadminDashboardComponent implements OnInit {
         this.getUserByOrganizationIdAndUserId=data.data;
         //console.log(this.getUserByOrganizationIdAndUserId)
       });
-      this.getToday = calendar.getToday(); 
+      // this.getToday = calendar.getToday(); 
+      // console.log(localStorage.getItem('dbFromDate'), localStorage.getItem('dbToDate'))
+      // if(localStorage.getItem('dbFromDate')==null && localStorage.getItem('dbToDate')==null){
+      //   let inityear = this.getToday.year;
+      //   let initmonth = this.getToday.month <= 9 ? '0' + this.getToday.month : this.getToday.month;;
+      //   let initday = this.getToday.day <= 9 ? '0' + this.getToday.day : this.getToday.day;
+      //   let initfinalDate = initday + "/" + initmonth + "/" + inityear;
+      //   this.initToday = initfinalDate;
+      //   this.customer.setFromDate(this.initToday);
+      //   this.customer.setToDate(this.initToday);
+      //   this.fromDate = this.initToday;
+      //   this.toDate = this.initToday;
+      // }
+
+      this.getToday = calendar.getToday();
+      let inityear = this.getToday.year;
+      let initmonth = this.getToday.month <= 9 ? '0' + this.getToday.month : this.getToday.month;;
+      let initday = this.getToday.day <= 9 ? '0' + this.getToday.day : this.getToday.day;
+      let initfinalDate = initday + "/" + initmonth + "/" + inityear;
+      this.initToday = initfinalDate;
       if(localStorage.getItem('dbFromDate')==null && localStorage.getItem('dbToDate')==null){
-        let inityear = this.getToday.year;
-        let initmonth = this.getToday.month <= 9 ? '0' + this.getToday.month : this.getToday.month;;
-        let initday = this.getToday.day <= 9 ? '0' + this.getToday.day : this.getToday.day;
-        let initfinalDate = initday + "/" + initmonth + "/" + inityear;
-        this.initToday = initfinalDate;
         this.customer.setFromDate(this.initToday);
         this.customer.setToDate(this.initToday);
         this.fromDate = this.initToday;
@@ -261,5 +275,87 @@ export class OrgadminDashboardComponent implements OnInit {
       });
     }
    }
+
+   filterToday(){
+    let inityear = this.getToday.year;
+      let initmonth =
+        this.getToday.month <= 9
+          ? '0' + this.getToday.month
+          : this.getToday.month;
+      let initday =
+        this.getToday.day <= 9 ? '0' + this.getToday.day : this.getToday.day;
+      let initfinalDate = initday + '/' + initmonth + '/' + inityear;
+      this.initToday = initfinalDate;
+      this.customer.setFromDate(this.initToday);
+      this.customer.setToDate(this.initToday);
+
+      this.dashboardservice.setFromDate(this.initToday);
+      this.dashboardservice.setToDate(this.initToday);
+    window.location.reload();
+  }
+
+   filterLastMonth() {
+    let date = new Date();
+    date.setMonth(date.getMonth() - 1);
+    let firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 2);
+    let lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+    let fromDateString = firstDayOfMonth.toISOString().split('T')[0];
+    let toDateString = lastDayOfMonth.toISOString().split('T')[0];
+  
+    let getInputFromDate: any = fromDateString.split('-');
+    let finalInputFromDate =
+      getInputFromDate[2] +
+      '/' +
+      getInputFromDate[1] +
+      '/' +
+      getInputFromDate[0];
+  
+      let getInputToDate: any = toDateString.split('-');
+      let finalInputToDate =
+        getInputToDate[2] +
+        '/' +
+        getInputToDate[1] +
+        '/' +
+        getInputToDate[0];
+    this.customer.setFromDate(finalInputFromDate);
+    this.customer.setToDate(finalInputToDate);
+
+    this.dashboardservice.setFromDate(finalInputFromDate);
+    this.dashboardservice.setToDate(finalInputToDate);
+
+    window.location.reload();
+  }
+
+  filterMonthToDate() {
+    let currentDate = new Date();
+    let firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 2);
+    let fromDateString = firstDayOfMonth.toISOString().split('T')[0];
+    let toDateString = currentDate.toISOString().split('T')[0];
+  
+    let getInputFromDate: any = fromDateString.split('-');
+    let finalInputFromDate =
+      getInputFromDate[2] +
+      '/' +
+      getInputFromDate[1] +
+      '/' +
+      getInputFromDate[0];
+
+      let inityear = this.getToday.year;
+      let initmonth =
+        this.getToday.month <= 9
+          ? '0' + this.getToday.month
+          : this.getToday.month;
+      let initday =
+        this.getToday.day <= 9 ? '0' + this.getToday.day : this.getToday.day;
+      let initfinalDate = initday + '/' + initmonth + '/' + inityear;
+      this.initToday = initfinalDate;
+  
+      this.customer.setFromDate(finalInputFromDate);
+      this.customer.setToDate(this.initToday);
+
+      this.dashboardservice.setFromDate(finalInputFromDate);
+      this.dashboardservice.setToDate(this.initToday);
+      window.location.reload();
+  }
 
 }

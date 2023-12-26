@@ -43,5 +43,4 @@ public class ConventionalAttributesMaster implements Serializable {
 
     @Column(name = "global_check_type")
     private String globalCheckType;
-
 }

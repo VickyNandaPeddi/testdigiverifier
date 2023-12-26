@@ -268,6 +268,7 @@ export class ConventionalVendorcheckDashboardComponent implements OnInit {
     licheckId: new FormControl(''),
     vendorName: new FormControl(''),
     sourceName: new FormControl(''),
+    vendorCheckStatusMasterId: new FormControl(''),
     insufficiencyRemarks: new FormControl('')
   });
 
@@ -663,6 +664,7 @@ export class ConventionalVendorcheckDashboardComponent implements OnInit {
       licheckId: this.liIndex,
       vendorName: this.vendorName,
       sourceName: this.sourceName,
+      vendorCheckStatusMasterId:'2',
       insufficiencyRemarks: this.insuffRemarks
     });
     formData.append('vendorchecks', JSON.stringify(this.formpassport.value));
@@ -815,10 +817,12 @@ export class ConventionalVendorcheckDashboardComponent implements OnInit {
 
 
   RaiseInsufficiencyOnProgress(content: any, item: any) {
+    debugger
     this.inprogressStatus = true;
     const modalRef = this.modalService.open(this.insuffModal);
     let submitbutton = document.getElementById("raiseinsuffsubmitinprogress");
     if (submitbutton) {
+      debugger
       const self = this;
       console.log(item)
       submitbutton.addEventListener("click", function () {
@@ -941,7 +945,7 @@ export class ConventionalVendorcheckDashboardComponent implements OnInit {
     });
   }
   downloadReferenceExcelData(candidateName: any, sourceName: any, candidateId: any, sourceId: any) {
-
+    debugger
     this.candidateService.generateReferenceDataForVendor(candidateId, sourceId).subscribe((data: any) => {
       const link = document.createElement('a');
       link.href = 'data:application/vnd.ms-excel;base64,' + data.message;

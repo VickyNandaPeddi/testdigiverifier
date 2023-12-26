@@ -48,13 +48,13 @@ export class AdminHeaderComponent implements OnInit {
   }
 
   displayExcel() {
-    this.candidateservice.generateDataForExcel().subscribe((data: any) => {
-      const link = document.createElement('a');
-      link.href = 'data:application/vnd.ms-excel;base64,' + data.message;
-      link.download = "Conventional Utilization Report"+ ".xlsx";
-      link.target = '_blank';
-      link.click();
-    });
+    // this.candidateservice.generateDataForExcel().subscribe((data: any) => {
+    //   const link = document.createElement('a');
+    //   link.href = 'data:application/vnd.ms-excel;base64,' + data.message;
+    //   link.download = "Conventional Utilization Report"+ ".xlsx";
+    //   link.target = '_blank';
+    //   link.click();
+    // });
   }
 
 

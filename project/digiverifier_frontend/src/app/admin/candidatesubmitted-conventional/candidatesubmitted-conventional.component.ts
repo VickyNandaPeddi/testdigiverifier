@@ -54,7 +54,7 @@ export class CandidatesubmittedConventionalComponent implements OnInit {
     fromDate: new FormControl('', Validators.required),
     toDate: new FormControl('', Validators.required),
   });
-
+  totalpages: any=0;
   candidateData: any;
   filteredData: any[] = [];
   // added for chart
@@ -253,18 +253,19 @@ export class CandidatesubmittedConventionalComponent implements OnInit {
       fromDate: fromDate,
       toDate: toDate,
       status: this.getStatCodes,
+      pageNumber: this.currentPageIndex
     };
-
     this.dashboardservice
       .getCandidatesSubmittedDetailsByDateRange(filterData)
       .subscribe((resp: any) => {
-        // @ts-ignore
-        this.candidateData = resp.data;
+        console.log("data" + JSON.stringify(resp.data))
+        this.totalpages = resp.data.totalPages;
+        this.candidateData = resp.data.conventionalVendorCandidatesSubmittedList;
         this.filteredData = this.candidateData;
-        const startIndex = this.currentPageIndex * this.pageSize;
-        const endIndex = startIndex + this.pageSize;
-        return this.filteredData.slice(startIndex, endIndex);
 
+        // const startIndex = this.currentPageIndex * this.pageSize;
+        // const endIndex = startIndex + this.pageSize;
+        // return this.filteredData.slice(startIndex, endIndex);
       });
 
   }
@@ -608,22 +609,81 @@ export class CandidatesubmittedConventionalComponent implements OnInit {
     return `${day}-${month}-${year} ${hours}:${minutes}`;
   }
 
+
+
   get totalPages(): number {
-    const filteredItems = this.filteredData;
-    return Math.ceil(filteredItems.length / this.pageSize);
+    // const filteredItems = this.filteredData;
+    // console.log(this.filteredData.length)
+    // return Math.ceil();
+
+    // for (let i = 0; i < this.filteredData.length; i++) {
+    //   console.log("Total PAges::{}", Math.ceil(this.filteredData[i].totalPages / this.pageSize));
+    //   return Math.ceil(this.filteredData[i].totalPages / this.pageSize);
+    // }
+    // return 0;
+
+    return this.totalpages;
   }
 
   goToPrevPage(): void {
+debugger
     // this.idvalue=idvalue;
     if (this.currentPageIndex > 0) {
       this.currentPageIndex--;
     }
+
+    var userId: any = localStorage.getItem('userId');
+    var fromDate: any = localStorage.getItem('dbFromDate');
+    var toDate: any = localStorage.getItem('dbToDate');
+    let filterData = {
+      userId: userId,
+      fromDate: fromDate,
+      toDate: toDate,
+      status: this.getStatCodes,
+      pageNumber: this.currentPageIndex
+    };
+
+    this.dashboardservice
+      .getCandidatesSubmittedDetailsByDateRange(filterData)
+      .subscribe((resp: any) => {
+      this.totalpages=  resp.data.totalPages
+        this.candidateData = resp.data.conventionalVendorCandidatesSubmittedList;
+        this.filteredData = this.candidateData;
+        const startIndex = this.currentPageIndex * this.pageSize;
+        const endIndex = startIndex + this.pageSize;
+        return this.filteredData.slice(startIndex, endIndex);
+
+      });
   }
 
   goToNextPage(): void {
+
     if (this.currentPageIndex < this.totalPages - 1) {
       this.currentPageIndex++;
     }
+    var userId: any = localStorage.getItem('userId');
+    var fromDate: any = localStorage.getItem('dbFromDate');
+    var toDate: any = localStorage.getItem('dbToDate');
+    let filterData = {
+      userId: userId,
+      fromDate: fromDate,
+      toDate: toDate,
+      status: this.getStatCodes,
+      pageNumber: this.currentPageIndex
+    };
+
+    this.dashboardservice
+      .getCandidatesSubmittedDetailsByDateRange(filterData)
+      .subscribe((resp: any) => {
+        this.totalpages=  resp.data.totalPages
+        this.candidateData = resp.data.conventionalVendorCandidatesSubmittedList;
+        this.filteredData = this.candidateData;
+        const startIndex = this.currentPageIndex * this.pageSize;
+        const endIndex = startIndex + this.pageSize;
+        return this.filteredData.slice(startIndex, endIndex);
+
+      });
+
   }
 
   filteredDatapagination(): any[] {

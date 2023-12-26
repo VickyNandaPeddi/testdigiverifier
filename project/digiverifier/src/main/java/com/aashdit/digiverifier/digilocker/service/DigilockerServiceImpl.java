@@ -539,7 +539,7 @@ public class DigilockerServiceImpl implements DigilockerService {
 					candidateCafEducation.setPercentage(cgpa.equals("")?percentage:cgpa);
 					candidateCafEducation.setColor(colorRepository.findByColorCode("GREEN"));
 					candidateCafEducation.setYearOfPassing(yearOfPassing);
-					candidateCafEducation.setCourseName(courseName);
+//					candidateCafEducation.setCourseName(courseName);
 					candidateCafEducation.setBoardOrUniversityName(boardOrUniversityName);
 					candidateCafEducation.setQualificationMaster(qualificationMasterRepository.findByQualificationCode("BEBTECH"));
 					candidateCafEducation.setSuspectClgMaster(suspectClgMasterRepository.findById(0L).get());

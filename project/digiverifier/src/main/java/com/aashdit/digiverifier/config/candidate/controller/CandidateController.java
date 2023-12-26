@@ -329,4 +329,11 @@ public class CandidateController {
         ServiceOutcome<ConventionalCReportApprovalDto> svcSearchResult = candidateService.getVendorUploadChecksByCandidateId(candidateCode);
         return new ResponseEntity<>(svcSearchResult, HttpStatus.OK);
     }
+    
+    @ApiOperation("Get Vendor Details Status And Count")
+    @RequestMapping(value = "/findConVendorStatusCount", method = { RequestMethod.POST})
+    public ResponseEntity<ServiceOutcome<DashboardDto>> findConVendorStatusCount(@RequestHeader("Authorization") String authorization, @RequestBody DashboardDto dashboardDto) {
+        ServiceOutcome<DashboardDto> svcSearchResult = candidateService.findConVendorStatusCount(dashboardDto);
+        return new ResponseEntity<ServiceOutcome<DashboardDto>>(svcSearchResult, HttpStatus.OK);
+    }
 }

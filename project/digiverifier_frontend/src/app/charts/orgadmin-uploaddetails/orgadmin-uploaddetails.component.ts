@@ -175,23 +175,23 @@ export class OrgadminUploaddetailsComponent implements OnInit, OnDestroy, AfterV
         'fromDate': fromDate,
         'toDate': toDate
       }
-      this.orgadmin.getUploadDetails(filterData).subscribe((uploadinfo: any) => {
+      // this.orgadmin.getUploadDetails(filterData).subscribe((uploadinfo: any) => {
 
-        this.getuploadinfo = uploadinfo.data.candidateStatusCountDto;
-        //console.log(this.getuploadinfo);
-        let data = [];
-        for (let i = 0; i < this.getuploadinfo.length; i++) {
-          let obj = {};
-          data.push({
-            name: this.getuploadinfo[i].statusName,
-            value: this.getuploadinfo[i].count,
-            statcode: this.getuploadinfo[i].statusCode
-          });
+      //   this.getuploadinfo = uploadinfo.data.candidateStatusCountDto;
+      //   //console.log(this.getuploadinfo);
+      //   let data = [];
+      //   for (let i = 0; i < this.getuploadinfo.length; i++) {
+      //     let obj = {};
+      //     data.push({
+      //       name: this.getuploadinfo[i].statusName,
+      //       value: this.getuploadinfo[i].count,
+      //       statcode: this.getuploadinfo[i].statusCode
+      //     });
 
-        }
-        chart.data = data;
+      //   }
+      //   chart.data = data;
 
-      });
+      // });
 // Add and configure Series
       let pieSeries = chart.series.push(new am4charts.PieSeries());
 

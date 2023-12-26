@@ -11,7 +11,6 @@ import com.aashdit.digiverifier.vendorcheck.dto.*;
 import com.aashdit.digiverifier.vendorcheck.model.ConventionalAttributesMaster;
 import com.aashdit.digiverifier.vendorcheck.model.ConventionalVendorCandidatesSubmitted;
 import com.aashdit.digiverifier.vendorcheck.model.ModeOfVerificationStatusMaster;
-import org.apache.poi.ss.formula.functions.T;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,7 +23,7 @@ import java.util.List;
  */
 @Service
 public interface liCheckToPerformService<T> {
-    public ServiceOutcome<List<ConventionalVendorCandidatesSubmitted>> findAllConventionalVendorSubmittedCandidatesByDateRange(DashboardDto dashboardDto) throws Exception;
+    public ServiceOutcome<DashboardDto> findAllConventionalVendorSubmittedCandidatesByDateRange(DashboardDto dashboardDto) throws Exception;
 
     public ServiceOutcome<List<ConventionalVendorCandidatesSubmitted>> findAllSubmittedCandidatesByDateRangeOnInterimAndFinal(DashboardDto dashboardDto) throws Exception;
 
@@ -84,8 +83,6 @@ public interface liCheckToPerformService<T> {
     ServiceOutcome<ConventionalAttributesMaster> saveConventionalAttributesMaster(ConventionalAttributesMaster conventionalAttributesMaster);
 
 //    ServiceOutcome<List<ConventionalAttributesMaster>> getConventionalAttributesMasterById(Long Id);
-
-
     ServiceOutcome getConventionalAttributesMasterById(Long vendorCheckId, String type);
 
     public ServiceOutcome<List<ConventionalVendorCandidatesSubmitted>> searchAllCandidate(String searchText);
@@ -99,4 +96,7 @@ public interface liCheckToPerformService<T> {
     public void deleteData(String startDate, String endDate) throws Exception;
 
     public ServiceOutcome<String> updateIdentityCheckDisableStatus(String checkUniqueId,String enableStatus);
+    
+    ServiceOutcome<ConventionalAttributesMaster> updateConventionalAttributesMaster(ConventionalAttributesMaster conventionalAttributesMaster,Long attributeId);
+
 }

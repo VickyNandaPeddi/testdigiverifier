@@ -36,8 +36,11 @@ import {
 import {
   ConventionalCReportApprovalComponent
 } from './conventional-c-report-approval/conventional-creport-approval/conventional-creport-approval.component';
+import { VendorUtilizationReportComponent } from './vendor-utilization-report/vendor-utilization-report.component';
+import { ConventionalUtilizationReportComponent } from './conventional-utilization-report/conventional-utilization-report.component';
 
 const routes: Routes = [
+  { path: 'vendorUtilization', component: ConventionalUtilizationReportComponent, canActivate: [AdminGuard], data:{roles:['ROLE_CBADMIN','ROLE_ADMIN','ROLE_PARTNERADMIN','ROLE_AGENTSUPERVISOR','ROLE_AGENTHR']}},
   {
     path: '', component: AdminComponent,
     children: [
@@ -143,7 +146,7 @@ const routes: Routes = [
         path: 'ConventionalDashboard',
         component: VendorDashboardComponent,
         canActivate: [AdminGuard],
-        data: {roles: ['ROLE_ADMIN', 'ROLE_PARTNERADMIN', 'ROLE_AGENTSUPERVISOR', 'ROLE_AGENTHR']}
+        data: {roles: ['ROLE_ADMIN', 'ROLE_PARTNERADMIN', 'ROLE_AGENTSUPERVISOR', 'ROLE_AGENTHR', 'ROLE_VENDOR']}
       },
 
       {
