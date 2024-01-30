@@ -23,7 +23,7 @@
                             <div class="table-responsive">
                                 <table class="table table-bordered">
                                     <thead>
-                                        <th>S.No</th>
+                                        <th>SI#</th>
                                         <th>First Name</th>
                                         <th>Last Name</th>
                                         <th>Email ID</th>
@@ -139,9 +139,18 @@
                 <div class="col-md-12">
                     <div class="form-group">
                         <label for="" class="required required_toggle">Password</label>
-                        <input type="text" class="form-control form-control-sm" formControlName="password">
+                        <input type="text" [class.error]="isPasswordInvalid()" [class.success]="isPasswordValid()" class="form-control form-control-sm" formControlName="password">
                         
                     </div>
+                    <div class="warning-icon" *ngIf="isPasswordInvalid()" [title]="
+                    '• Must be at least 8 characters long\n' +
+                    '• Must include at least one uppercase letter (A-Z)\n' +
+                    '• Must include at least one lowercase letter (a-z)\n' +
+                    '• Must include at least one number (0-9)\n' +
+                    '• Must include at least one non-alphanumeric character (! @ # $ % ^ & * ( ) _ + - = [ ] { } | )'
+                    ">
+                        <i class="fa fa-exclamation-circle"></i>
+                      </div>
                 </div>
             </div>
             <div class="row">

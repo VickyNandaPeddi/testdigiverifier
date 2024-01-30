@@ -4,14 +4,15 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -31,6 +32,11 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @Slf4j
 public class JwtFilter extends OncePerRequestFilter {
+	@Value("${CROSS.ORIGINS}")
+	private String crossOrigins;
+	
+	@Value("${KPMG.CROSS.ORIGINS}")
+	private String kpmgCrossOrigins;
 
 	@Autowired
 	private JwtUtil jwtUtil;
@@ -42,7 +48,15 @@ public class JwtFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
 			FilterChain filterChain) throws ServletException, IOException {
 
-		httpServletResponse.setHeader("Access-Control-Allow-Origin", "*");
+		httpServletResponse.setHeader("Access-Control-Allow-Origin", crossOrigins);
+		String requestingOrigin = httpServletRequest.getHeader("Origin"); 
+		if (requestingOrigin != null) {
+		    // Check if the requesting origin is allowed
+		    if (requestingOrigin.equals(crossOrigins) ||
+		        requestingOrigin.equals(kpmgCrossOrigins)) {
+		        httpServletResponse.setHeader("Access-Control-Allow-Origin", requestingOrigin);
+		    }
+		}
 
 		httpServletResponse.setHeader("Access-Control-Allow-Methods", "GET,PUT,POST,OPTIONS");
 		httpServletResponse.setHeader("Access-Control-Allow-Credentials", "true");
@@ -50,12 +64,16 @@ public class JwtFilter extends OncePerRequestFilter {
 		httpServletResponse.setHeader("Access-Control-Allow-Headers",
 				"Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With, No-Auth");
 
+		httpServletResponse.setHeader("X-Frame-Options", "SAMEORIGIN");
+
+		httpServletResponse.setHeader("Content-Security-Policy", "frame-ancestors 'self'");
+		
 		Boolean skipThis = false;
 		if (httpServletRequest.getRequestURI().contains("/api/login/authenticate")
 				|| httpServletRequest.getRequestURI().contains("/configuration/ui")
 				|| httpServletRequest.getRequestURI().contains("/swagger")
 				|| httpServletRequest.getRequestURI().contains("/webjars")
-				|| httpServletRequest.getRequestURI().contains("/v2")
+				|| httpServletRequest.getRequestURI().contains("/v3")
 				|| httpServletRequest.getRequestURI().contains("/api/allowAll")) {
 			skipThis = true;
 			filterChain.doFilter(httpServletRequest, httpServletResponse);

@@ -5,6 +5,7 @@ import {ModalDismissReasons, NgbModal, NgbCalendar, NgbDate} from '@ng-bootstrap
 import { FormGroup, FormControl, FormBuilder, Validators } from '@angular/forms';
 import { CustomerService } from 'src/app/services/customer.service';
 import Swal from 'sweetalert2';
+import {AuthenticationService} from "../../services/authentication.service";
 @Component({
   selector: 'app-candidate-mgmt',
   templateUrl: './candidate-mgmt.component.html',
@@ -23,25 +24,40 @@ export class CandidateMgmtComponent implements OnInit {
   setfromDate:any;
   settoDate:any;
   initToday:any;
+  originalData: any=[];
+  candidateCode: any;
+  getStatus:any=[];
+  selectedFilter: any;
   dashboardFilter = new FormGroup({
     fromDate: new FormControl('', Validators.required),
     toDate: new FormControl('', Validators.required)
   });
-  constructor(private orgadmin: OrgadminDashboardService, public calendar: NgbCalendar, 
-    private customer: CustomerService) {
-    var userId:any = localStorage.getItem('userId');
+  constructor(private orgadmin: OrgadminDashboardService,private authService:AuthenticationService, public calendar: NgbCalendar,
+    private customer: CustomerService, private customers:CustomerService) {
+    var userId:any = this.authService.getuserId();
       var fromDate:any = localStorage.getItem('dbFromDate');
       var toDate:any = localStorage.getItem('dbToDate');
       let filterData = {
-        'userId': userId,
+        // 'userId': userId,
         'fromDate': fromDate,
         'toDate': toDate,
         'status': 'NEWUPLOAD'
       }
-      this.orgadmin.getChartDetails(filterData).subscribe((data: any)=>{
-        this.candidateData=data.data.candidateDtoList;
+      // this.orgadmin.getChartDetails(filterData).subscribe((data: any)=>{
+      //   this.candidateData=data.data.candidateDtoList;
+      //   console.log(this.candidateData);
+      // });
+
+      this.orgadmin.getChartDetails(filterData).subscribe((data: any) => {
+        this.originalData = data.data.candidateDtoList;
+        this.candidateData = this.originalData;
         console.log(this.candidateData);
       });
+
+      this.customers.getAllStatus().subscribe((data: any)=>{
+        this.getStatus=data.data;
+        console.log(this.getStatus);
+      })
       this.defaultColDef = {
         sortable: true,
         resizable: true,
@@ -60,7 +76,7 @@ export class CandidateMgmtComponent implements OnInit {
         { headerName: 'Status', field: 'candidateStatusName',...this.defaultColDef, filter: 'agSetColumnFilter' }
       ];
 
-      this.getToday = calendar.getToday(); 
+      this.getToday = calendar.getToday();
       if(localStorage.getItem('dbFromDate')==null && localStorage.getItem('dbToDate')==null){
         let inityear = this.getToday.year;
         let initmonth = this.getToday.month <= 9 ? '0' + this.getToday.month : this.getToday.month;;
@@ -72,7 +88,7 @@ export class CandidateMgmtComponent implements OnInit {
         this.fromDate = this.initToday;
         this.toDate = this.initToday;
       }
-      
+
       var checkfromDate:any = localStorage.getItem('dbFromDate');
       let getfromDate = checkfromDate.split('/');
       this.setfromDate = { day:+getfromDate[0],month:+getfromDate[1],year:+getfromDate[2]};
@@ -87,7 +103,7 @@ export class CandidateMgmtComponent implements OnInit {
         toDate: this.settoDate
        });
 
-      
+
    }
 
    onfromDate(event:any) {
@@ -132,13 +148,34 @@ export class CandidateMgmtComponent implements OnInit {
     }
    }
 
+  SelectedFilter() {
+    const selectedFilter = this.selectedFilter;
+    if (!selectedFilter || selectedFilter === "all") {
+      if (this.originalData) {
+        this.candidateData = this.originalData;
+        this.candidateCode = this.candidateData.length > 0 ? this.candidateData[0].candidateId : null;
+        console.log(this.candidateData);
+      } else {
+      this.orgadmin.getChartDetails(selectedFilter).subscribe((data: any) => {
+        this.originalData = data.data.candidateDtoList;
+        this.candidateData = this.originalData;
+        this.candidateCode = this.candidateData.length > 0 ? this.candidateData[0].candidateId : null;
+        console.log(this.candidateData);
+      });
+      }
+      } else {
+      this.candidateData = this.originalData.filter((temp: any) => temp.candidateStatusName === selectedFilter);
+      this.candidateCode = this.candidateData.length > 0 ? this.candidateData[0].candidateId : null;
+      }
+  }
+
    onBtExport() {
     this.gridApi.exportDataAsCsv();
   }
   onGridReady(params:any) {
     this.gridApi = params.api;
   }
-  
+
   ngOnInit(): void {
   }
 

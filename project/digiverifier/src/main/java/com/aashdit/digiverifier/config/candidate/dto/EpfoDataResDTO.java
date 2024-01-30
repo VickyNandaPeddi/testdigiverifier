@@ -3,7 +3,7 @@ package com.aashdit.digiverifier.config.candidate.dto;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 
-import javax.persistence.Column;
+import jakarta.persistence.Column;
 import java.util.Date;
 
 @Data

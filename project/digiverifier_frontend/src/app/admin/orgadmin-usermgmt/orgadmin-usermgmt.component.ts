@@ -33,7 +33,11 @@ export class OrgadminUsermgmtComponent implements OnInit {
     userLandlineNum: new FormControl('', [Validators.minLength(8), Validators.maxLength(8)]),
     location: new FormControl('', Validators.required),
     roleId: new FormControl('', Validators.required),
-    password: new FormControl('', Validators.required),
+    password: new FormControl('', [
+      Validators.required,
+      Validators.minLength(8),
+      Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&()_+{}\[\]\-^|=])[A-Za-z\d@$!%*?&()_+{}\[\]\-^|=]+$/)
+    ]),
     organizationId: new FormControl('', Validators.required),
     userId: new FormControl(''),
     agentSupervisorId: new FormControl('')
@@ -47,7 +51,7 @@ export class OrgadminUsermgmtComponent implements OnInit {
     this.orgID = this.authService.getOrgID();
     this.orgadmin.getOrgusers(this.orgID).subscribe((data: any)=>{
       this.getOrgUsers=data.data;
-      if(this.authService.roleMatch(['ROLE_ADMIN'])){
+      if(this.authService.roleMatch(['ROLE_ADMIN', "ROLE_CBADMIN"])){
         this.admin_active = true;
       }
     });
@@ -58,40 +62,55 @@ export class OrgadminUsermgmtComponent implements OnInit {
       this.getSupervisor=supervisorList.data;
       console.log(this.getSupervisor);
     });
-    
+
    }
 
   ngOnInit(): void {
-    this.orgadmin.getRolePerMissionCodes(localStorage.getItem('roles')).subscribe(
+    this.orgadmin.getRolePerMissionCodes(this.authService.getRoles()).subscribe(
       (result:any) => {
       this.getRolePerMissionCodes = result.data;
         console.log(this.getRolePerMissionCodes);
         if(this.getRolePerMissionCodes){
           for (let index = 0; index < this.getOrgUsers.length; index++) {
-            if((this.getOrgUsers[index].roleName === 'Agent' && this.getRolePerMissionCodes.includes('EDITAGENT')) || this.authService.roleMatch(['ROLE_ADMIN'])){
+            if((this.getOrgUsers[index].roleName === 'Agent' && this.getRolePerMissionCodes.includes('EDITAGENT')) || this.authService.roleMatch(['ROLE_ADMIN', "ROLE_CBADMIN"])){
               $("#edit"+index).removeClass('d-none');
              }
-            if(this.getOrgUsers[index].roleName === 'Agent Supervisor' && this.getRolePerMissionCodes.includes('EDITAGENTSUPERVISOR') || this.authService.roleMatch(["ROLE_ADMIN"])){
+            if(this.getOrgUsers[index].roleName === 'Agent Supervisor' && this.getRolePerMissionCodes.includes('EDITAGENTSUPERVISOR') || this.authService.roleMatch(["ROLE_ADMIN", "ROLE_CBADMIN"])){
               $("#edit"+index).removeClass('d-none');
             }
 
-            if(this.getOrgUsers[index].roleName === 'Agent' && this.getRolePerMissionCodes.includes('ACTIVEANDINACTIVEAGENT') || this.authService.roleMatch(["ROLE_ADMIN"])){
+            if(this.getOrgUsers[index].roleName === 'Agent' && this.getRolePerMissionCodes.includes('ACTIVEANDINACTIVEAGENT') || this.authService.roleMatch(["ROLE_ADMIN", "ROLE_CBADMIN"])){
               $("#inactiveCust_d"+index).removeClass('d-none');
               $("#inactiveCust_p"+index).removeClass('d-none');
              }
-             if(this.getOrgUsers[index].roleName === 'Agent Supervisor' && this.getRolePerMissionCodes.includes('ACTIVEANDINACTIVEAGENTSUPERVISOR') || this.authService.roleMatch(["ROLE_ADMIN"])){
+             if(this.getOrgUsers[index].roleName === 'Agent Supervisor' && this.getRolePerMissionCodes.includes('ACTIVEANDINACTIVEAGENTSUPERVISOR') || this.authService.roleMatch(["ROLE_ADMIN", "ROLE_CBADMIN"])){
               $("#inactiveCust_d"+index).removeClass('d-none');
               $("#inactiveCust_p"+index).removeClass('d-none');
              }
 
-            
+
           }
 
         }
     });
-    
+
   }
 
+  get password() {
+    return this.addOrgUser.get('password');
+  }
+
+  // Check if the password has errors
+  isPasswordInvalid() {
+    const passwordControl = this.addOrgUser.get('password');
+    return passwordControl?.invalid && (passwordControl?.touched || passwordControl?.dirty);
+  }
+
+  // Check if the password is valid
+  isPasswordValid() {
+    const passwordControl = this.addOrgUser.get('password');
+    return passwordControl?.valid && (passwordControl?.touched || passwordControl?.dirty);
+  }
 
   onSubmit() {
     return this.orgadmin.saveOrgusers(this.addOrgUser.value).subscribe((data:any)=>{
@@ -109,9 +128,9 @@ export class OrgadminUsermgmtComponent implements OnInit {
           title: data.message,
           icon: 'warning'
         })
-      } 
+      }
     });
-    
+
   }
 
 
@@ -124,7 +143,7 @@ export class OrgadminUsermgmtComponent implements OnInit {
       this.closeModal = `Dismissed ${this.getDismissReason(res)}`;
     });
   }
-  
+
   private getDismissReason(reason: any): string {
     if (reason === ModalDismissReasons.ESC) {
       return 'by pressing ESC';
@@ -157,8 +176,8 @@ export class OrgadminUsermgmtComponent implements OnInit {
           title: data.message,
           icon: 'warning'
         })
-      } 
-       
+      }
+
      })
   }
   selectroleId(event:any){
@@ -179,7 +198,7 @@ export class OrgadminUsermgmtComponent implements OnInit {
       backdrop: 'static'
      });
      $("#employeeId").attr("readonly", "readonly");
-     
+
      this.orgadmin.getUserbyId(userId).subscribe((result: any)=>{
       this.getUserData=result.data;
       console.log(this.getUserData);
@@ -197,8 +216,8 @@ export class OrgadminUsermgmtComponent implements OnInit {
         organizationId: this.getUserData.organizationId
        });
        if(userId){
-        this.addOrgUser.controls["password"].clearValidators();
-        this.addOrgUser.controls["password"].updateValueAndValidity();
+        this.addOrgUser.controls["password"];
+        this.addOrgUser.controls["password"];
         $(".required_toggle").removeClass("required");
         if(this.getUserData.roleId == 3){
           this.stat_roleId = true;
@@ -207,7 +226,7 @@ export class OrgadminUsermgmtComponent implements OnInit {
         }
       }
     });
-    
+
   }
 
 }

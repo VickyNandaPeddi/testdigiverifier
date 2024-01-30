@@ -1,47 +1,42 @@
 package com.aashdit.digiverifier.config.admin.dto;
-
-import com.aashdit.digiverifier.config.superadmin.model.VendorCheckStatusMaster;
-import com.aashdit.digiverifier.config.admin.model.VendorChecks;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import lombok.Data;
 
-import java.util.List;
-
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class VendorInitiatDto {
 
+	
+	private Long vendorId;
+	
+	private Long sourceId;
 
-    private Long vendorId;
+	private Long candidateId;
 
-    private Long sourceId;
+	private String documentname;
 
-    private Long candidateId;
+	private String candidateName;
 
-    private String documentname;
+	private String dateOfBirth;
 
-    private String candidateName;
+	private String contactNo;
 
-    private String dateOfBirth;
+	private String fatherName;
 
-    private String contactNo;
+	private String address;
 
-    private String fatherName;
+	private String alternateContactNo;
 
-    private String address;
+	private String typeOfPanel;
 
-    private String alternateContactNo;
+	private Long vendorCheckStatusMasterId;
+	
+	private String value;
 
-    private String typeOfPanel;
 
-    private Long vendorCheckStatusMasterId;
-
-    private String documentUrl;
-
-    private String licheckId;
-
-    private String vendorName;
-
-    private String sourceName;
-
-    private String insufficiencyRemarks;
+	
+	
+	
+   
 }

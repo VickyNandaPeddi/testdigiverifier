@@ -1,99 +1,116 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { environment } from 'src/environments/environment';
-import { map } from 'rxjs/operators';
-import { Router } from '@angular/router';
-
+import {Injectable} from '@angular/core';
+import {HttpClient, HttpHeaders, HttpXsrfTokenExtractor} from '@angular/common/http';
+import {environment} from 'src/environments/environment';
+import {map} from 'rxjs/operators';
+import {Router} from '@angular/router';
+import {CookieService} from "ngx-cookie-service";
 @Injectable({
   providedIn: 'root'
 })
 export class AuthenticationService {
 
   requestHeader = new HttpHeaders(
-    {"No-Auth":"True"}
+    {"No-Auth": "True"}
   );
-
-  constructor(private http:HttpClient, private router: Router) { }
-  
-  login(loginData: any){
+  constructor(private http: HttpClient, private router: Router, private cookieService: CookieService) {
+  }
+  login(loginData: any) {
     return this.http.post(`${environment.apiUrl}/api/login/authenticate`, loginData, {headers: this.requestHeader})
   }
-  public logOut(){
+  public logOut() {
     return this.http.post(`${environment.apiUrl}/api/login/sign-off`, {headers: this.requestHeader})
   }
-  public setRoles(roles: []){
-    localStorage.setItem('roles', JSON.stringify(roles));
-  }
-  public getRoles(){ 
-    return localStorage.getItem('roles'); //needs to return as Array
+  public setRoles(roles: []) {
+    this.cookieService.set('roles', JSON.stringify(roles));
+    // localStorage.setItem('roles', JSON.stringify(roles));
   }
 
-  public setToken(jwtToken: string){
-    localStorage.setItem('jwtToken', JSON.stringify(jwtToken));
-  }
-  public getToken(){ 
-    return JSON.parse(localStorage.getItem('jwtToken') || '{}'); //localStorage.getItem('jwtToken'); 
+  public getRoles() {
+    return this.cookieService.get('roles');
+    // return localStorage.getItem('roles'); //needs to return as Array
   }
 
-  public setuserName(userName: string){
-    localStorage.setItem('userName', userName);
-  }
-  public getuserName(){ 
-    return localStorage.getItem('userName'); 
+  public setToken(jwtToken: string) {
+    this.cookieService.set('jwtToken', JSON.stringify(jwtToken));
+    // localStorage.setItem('jwtToken', JSON.stringify(jwtToken));
   }
 
-  public setroleName(roleName: string){
-    localStorage.setItem('roleName', roleName);
-  }
-  public getroleName(){ 
-    return localStorage.getItem('roleName'); 
+  public getToken() {
+    return JSON.parse(this.cookieService.get('jwtToken') || '{}');
+    // return JSON.parse(localStorage.getItem('jwtToken') || '{}'); //localStorage.getItem('jwtToken');
   }
 
-  public setOrgID(orgID: string){
-    localStorage.setItem('orgID', orgID);
-  }
-  public getOrgID(){ 
-    return localStorage.getItem('orgID'); 
+  public setuserName(userName: string) {
+    this.cookieService.set('userName', userName)
+    // localStorage.setItem('userName', userName);
   }
 
-  public setuserId(userId: string){
-    localStorage.setItem('userId', userId);
-  }
-  public getuserId(){ 
-    return localStorage.getItem('userId'); 
+  public getuserName() {
+    return this.cookieService.get('userName')
+    // return localStorage.getItem('userName');
   }
 
-  public clear(){ 
-    return localStorage.clear(); 
+  public setroleName(roleName: string) {
+    this.cookieService.set('roleName', roleName);
+    // localStorage.setItem('roleName', roleName);
   }
-  public forceLogout(){
+
+  public getroleName() {
+    return this.cookieService.get('roleName');
+    // return localStorage.getItem('roleName');
+  }
+
+  public setOrgID(orgID: string) {
+    this.cookieService.set('orgID', orgID);
+    // localStorage.setItem('orgID', orgID);
+  }
+
+  public getOrgID() {
+    return this.cookieService.get('orgID');
+    // return localStorage.getItem('orgID');
+  }
+
+  public setuserId(userId: string) {
+    this.cookieService.set('userId', userId)
+    // localStorage.setItem('userId', userId);
+  }
+
+  public getuserId() {
+    return this.cookieService.get('userId');
+    // return localStorage.getItem('userId');
+  }
+
+  public clear() {
+    return localStorage.clear();
+  }
+
+  public forceLogout() {
     this.logOut().subscribe(
-      (response:any)=>{
-        if (response.outcome === true)
-        {
+      (response: any) => {
+        if (response.outcome === true) {
           this.clear();
           this.router.navigate(['./']);
         }
       }
-    ); 
+    );
   }
 
-  public isLoggedIn(){ 
+  public isLoggedIn() {
     return this.getRoles() && this.getToken();
   }
-  
-  public roleMatch(allowedRoles:any[]) :boolean{
-    let isMatch= false;
-    const roles:any = this.getRoles();
-    const userRoles  =[];
+
+  public roleMatch(allowedRoles: any[]): boolean {
+    let isMatch = false;
+    const roles: any = this.getRoles();
+    const userRoles = [];
     userRoles.push(roles);
-    if(userRoles != null){
-      for(let i=0; i< allowedRoles.length; i++){
-        for(let j=0; j< userRoles.length; j++){
-          if(userRoles[j] === '"'+allowedRoles[i]+'"'){
+    if (userRoles != null) {
+      for (let i = 0; i < allowedRoles.length; i++) {
+        for (let j = 0; j < userRoles.length; j++) {
+          if (userRoles[j] === '"' + allowedRoles[i] + '"') {
             isMatch = true;
             return isMatch;
-          }else{
+          } else {
             break;
           }
         }
@@ -102,7 +119,25 @@ export class AuthenticationService {
     return isMatch;
   }
 
+//  getCsrfToken(): string {
+//     const tokenCookie = document.cookie.split(';')
+//       .find(cookie => cookie.trim().startsWith('XSRF-TOKEN='));
 
+//     if (tokenCookie) {
+//       const token = tokenCookie.split('=')[1];
+//       console.log("token::{}",token);
+//       return token;
+//     }
+
+//     return '';
+//   }
+//   private createHeaders(): HttpHeaders {
+//     const headers = new HttpHeaders({
+//       "No-Auth":"True",
+//       "X-XSRF-TOKEN": this.getCsrfToken() || ''
+//     });
+//     return headers;
+//   }
 
 
 }

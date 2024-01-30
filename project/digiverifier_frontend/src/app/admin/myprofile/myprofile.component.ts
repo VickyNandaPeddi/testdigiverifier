@@ -34,12 +34,32 @@ export class MyprofileComponent implements OnInit {
         userFirstName: new FormControl(data.data['userFirstName'], Validators.required),
         userEmailId: new FormControl(data.data['userEmailId'], [Validators.required,Validators.email]),
         userMobileNum: new FormControl(data.data['userMobileNum'], [Validators.required,Validators.minLength(10), Validators.maxLength(10), Validators.pattern('[6-9]\\d{9}')]),
-        password: new FormControl(''),
+        password: new FormControl('', [
+          Validators.required,
+          Validators.minLength(8),
+          Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&()_+{}\[\]\-^|=])[A-Za-z\d@$!%*?&()_+{}\[\]\-^|=]+$/)
+        ]),
       });
     });
   }
 
   ngOnInit(): void {
+  }
+
+  get password() {
+    return this.formMyProfile.get('password');
+  }
+
+  // Check if the password has errors
+  isPasswordInvalid() {
+    const passwordControl = this.formMyProfile.get('password');
+    return passwordControl?.invalid && (passwordControl?.touched || passwordControl?.dirty);
+  }
+
+  // Check if the password is valid
+  isPasswordValid() {
+    const passwordControl = this.formMyProfile.get('password');
+    return passwordControl?.valid && (passwordControl?.touched || passwordControl?.dirty);
   }
 
   onSubmit(formMyProfile: FormGroup) {

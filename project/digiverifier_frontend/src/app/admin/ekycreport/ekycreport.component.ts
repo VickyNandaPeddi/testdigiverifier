@@ -29,13 +29,13 @@ export class EkycreportComponent implements OnInit {
       });
     }
     if(authService.roleMatch(['ROLE_ADMIN'])){
-      this.customers.getAgentList(localStorage.getItem('orgID')).subscribe((data: any)=>{
+      this.customers.getAgentList(this.authService.getOrgID()).subscribe((data: any)=>{
         this.getAgentID=data.data;
       });
       console.log(this.getAgentID);
     }
     let rportData = {
-      'userId': localStorage.getItem('userId')
+      'userId': this.authService.getuserId()
     }
 
     this.customers.posteKycReport(rportData).subscribe((data: any)=>{
@@ -43,7 +43,7 @@ export class EkycreportComponent implements OnInit {
       console.log(this.geteKycReport);
     });
 
-      
+
 
    }
   getagentId(id:any){
@@ -60,11 +60,11 @@ export class EkycreportComponent implements OnInit {
       this.getAgentID=data.data;
     });
   }
-  
+
   ngOnInit(): void {
   }
   onSubmitFilter(utilizationReportFilter:FormGroup){
-    var getuserId:any = localStorage.getItem('userId');
+    var getuserId:any = this.authService.getuserId();
     this.ekycReportFilter.patchValue({
       organizationIds: this.custId,
       agentIds: this.agentId,

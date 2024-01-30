@@ -37,47 +37,41 @@ export class OrgadminDashboardComponent implements OnInit {
   setfromDate:any;
   settoDate:any;
   initToday:any;
+  getStatus:any=[];
   dashboardFilter = new FormGroup({
     fromDate: new FormControl('', Validators.required),
     toDate: new FormControl('', Validators.required)
   });
-  constructor(private orgadmin:OrgadminService, private modalService: NgbModal,
+  SAactivityFilter:any=['NEWUPLOAD'];
+  constructor(private orgadmin:OrgadminService, private modalService: NgbModal, private customers:CustomerService,
     public authService: AuthenticationService,  private dashboardservice:OrgadminDashboardService,
-    public loaderService: LoaderService, public calendar: NgbCalendar, private customer: CustomerService) { 
+    public loaderService: LoaderService, public calendar: NgbCalendar, private customer: CustomerService) {
       this.getReportDeliveryStatCodes = this.dashboardservice.getReportDeliveryStatCode();
       this.getPendingDetailsStatCode = this.dashboardservice.getPendingDetailsStatCode();
       this.getStatCodes = this.dashboardservice.getStatusCode();
-      this.dashboardservice.getUsersByRoleCode(localStorage.getItem('roles')).subscribe((data: any)=>{
+      this.dashboardservice.getUsersByRoleCode(this.authService.getRoles()).subscribe((data: any)=>{
         this.getUserByOrganizationIdAndUserId=data.data;
         //console.log(this.getUserByOrganizationIdAndUserId)
       });
-      // this.getToday = calendar.getToday(); 
-      // console.log(localStorage.getItem('dbFromDate'), localStorage.getItem('dbToDate'))
-      // if(localStorage.getItem('dbFromDate')==null && localStorage.getItem('dbToDate')==null){
-      //   let inityear = this.getToday.year;
-      //   let initmonth = this.getToday.month <= 9 ? '0' + this.getToday.month : this.getToday.month;;
-      //   let initday = this.getToday.day <= 9 ? '0' + this.getToday.day : this.getToday.day;
-      //   let initfinalDate = initday + "/" + initmonth + "/" + inityear;
-      //   this.initToday = initfinalDate;
-      //   this.customer.setFromDate(this.initToday);
-      //   this.customer.setToDate(this.initToday);
-      //   this.fromDate = this.initToday;
-      //   this.toDate = this.initToday;
-      // }
+
+      this.customers.getAllStatus().subscribe((data: any)=>{
+        this.getStatus=data.data;
+        //console.log(this.getStatus);
+      })
 
       this.getToday = calendar.getToday();
-      let inityear = this.getToday.year;
-      let initmonth = this.getToday.month <= 9 ? '0' + this.getToday.month : this.getToday.month;;
-      let initday = this.getToday.day <= 9 ? '0' + this.getToday.day : this.getToday.day;
-      let initfinalDate = initday + "/" + initmonth + "/" + inityear;
-      this.initToday = initfinalDate;
-      if(localStorage.getItem('dbFromDate')==null && localStorage.getItem('dbToDate')==null){
+        let inityear = this.getToday.year;
+        let initmonth = this.getToday.month <= 9 ? '0' + this.getToday.month : this.getToday.month;;
+        let initday = this.getToday.day <= 9 ? '0' + this.getToday.day : this.getToday.day;
+        let initfinalDate = initday + "/" + initmonth + "/" + inityear;
+        this.initToday = initfinalDate;
+        if(localStorage.getItem('dbFromDate')==null && localStorage.getItem('dbToDate')==null){
         this.customer.setFromDate(this.initToday);
         this.customer.setToDate(this.initToday);
         this.fromDate = this.initToday;
         this.toDate = this.initToday;
       }
-      
+
       var checkfromDate:any = localStorage.getItem('dbFromDate');
       let getfromDate = checkfromDate.split('/');
       this.setfromDate = { day:+getfromDate[0],month:+getfromDate[1],year:+getfromDate[2]};
@@ -92,7 +86,7 @@ export class OrgadminDashboardComponent implements OnInit {
         toDate: this.settoDate
        });
 
-       
+
     }
   uploadAgent = new FormGroup({
     file: new FormControl('', Validators.required)
@@ -111,6 +105,7 @@ export class OrgadminDashboardComponent implements OnInit {
     }
 
   }
+
   uploadAgents() {
     this.currentFile = this.selectedFiles.item(0);
     this.orgadmin.uploadAgent(this.currentFile).subscribe(
@@ -131,16 +126,32 @@ export class OrgadminDashboardComponent implements OnInit {
     this.currentFile = this.selectedFiles.item(0);
     this.orgadmin.uploadCandidate(this.currentFile).subscribe(
       (event:any) => {
-        //console.log(event);
+       // console.log(event);
         if(event instanceof HttpResponse){
-          Swal.fire({
-            title: event.body.message,
-            icon: 'success'
-          }).then(function() {
-            window.location.reload();
-        });
+          if(event.body.outcome == true){
+            Swal.fire({
+              title: event.body.message,
+              icon: 'success'
+            }).then(function() {
+              window.location.reload();
+          });
+          }
+          else{
+            Swal.fire({
+              title: event.body.message,
+              icon: 'error'
+            }).then(function() {
+              window.location.reload();
+          });
+          }
         }
+
        });
+  }
+
+  activityFilter(activity:any){
+    this.SAactivityFilter = [];
+    this.SAactivityFilter.push(activity);
   }
 
   uploadClientscope() {
@@ -173,14 +184,14 @@ export class OrgadminDashboardComponent implements OnInit {
       this.loaderService.hide();
     },7000);
     //isCBadmin required for drilldown dashboard at Superadmin
-    const isCBadminVal = localStorage.getItem('roles');
+    const isCBadminVal = this.authService.getRoles();
     if(isCBadminVal == '"ROLE_CBADMIN"'){
       this.isCBadmin = true;
     }else{
       this.isCBadmin = false;
     }
-    
-    this.orgadmin.getRolePerMissionCodes(localStorage.getItem('roles')).subscribe(
+
+    this.orgadmin.getRolePerMissionCodes(this.authService.getRoles()).subscribe(
       (result:any) => {
       this.getRolePerMissionCodes = result.data;
         //console.log(this.getRolePerMissionCodes);
@@ -196,7 +207,7 @@ export class OrgadminDashboardComponent implements OnInit {
         }
     });
 
-    
+
   }
 
 
@@ -207,7 +218,7 @@ export class OrgadminDashboardComponent implements OnInit {
       this.closeModal = `Dismissed ${this.getDismissReason(res)}`;
     });
   }
-  
+
   private getDismissReason(reason: any): string {
     if (reason === ModalDismissReasons.ESC) {
       return 'by pressing ESC';
@@ -218,10 +229,10 @@ export class OrgadminDashboardComponent implements OnInit {
     }
   }
 
-  toggleDisplayDiv() {  
-    this.isShowDiv = !this.isShowDiv;  
-  } 
-  
+  toggleDisplayDiv() {
+    this.isShowDiv = !this.isShowDiv;
+  }
+
   getuserId(userId:any){
     if(userId != 'null'){
       localStorage.setItem('userId', userId);
@@ -277,85 +288,89 @@ export class OrgadminDashboardComponent implements OnInit {
    }
 
    filterToday(){
-    let inityear = this.getToday.year;
-      let initmonth =
-        this.getToday.month <= 9
-          ? '0' + this.getToday.month
-          : this.getToday.month;
-      let initday =
-        this.getToday.day <= 9 ? '0' + this.getToday.day : this.getToday.day;
-      let initfinalDate = initday + '/' + initmonth + '/' + inityear;
-      this.initToday = initfinalDate;
-      this.customer.setFromDate(this.initToday);
-      this.customer.setToDate(this.initToday);
-
-      this.dashboardservice.setFromDate(this.initToday);
-      this.dashboardservice.setToDate(this.initToday);
+    this.customer.setFromDate(this.initToday);
+    this.customer.setToDate(this.initToday);
     window.location.reload();
   }
 
-   filterLastMonth() {
-    let date = new Date();
-    date.setMonth(date.getMonth() - 1);
-    let firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 2);
-    let lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1);
-    let fromDateString = firstDayOfMonth.toISOString().split('T')[0];
-    let toDateString = lastDayOfMonth.toISOString().split('T')[0];
-  
-    let getInputFromDate: any = fromDateString.split('-');
-    let finalInputFromDate =
-      getInputFromDate[2] +
-      '/' +
-      getInputFromDate[1] +
-      '/' +
-      getInputFromDate[0];
-  
-      let getInputToDate: any = toDateString.split('-');
-      let finalInputToDate =
-        getInputToDate[2] +
-        '/' +
-        getInputToDate[1] +
-        '/' +
-        getInputToDate[0];
-    this.customer.setFromDate(finalInputFromDate);
-    this.customer.setToDate(finalInputToDate);
-
-    this.dashboardservice.setFromDate(finalInputFromDate);
-    this.dashboardservice.setToDate(finalInputToDate);
-
-    window.location.reload();
-  }
-
-  filterMonthToDate() {
-    let currentDate = new Date();
-    let firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 2);
-    let fromDateString = firstDayOfMonth.toISOString().split('T')[0];
-    let toDateString = currentDate.toISOString().split('T')[0];
-  
-    let getInputFromDate: any = fromDateString.split('-');
-    let finalInputFromDate =
-      getInputFromDate[2] +
-      '/' +
-      getInputFromDate[1] +
-      '/' +
-      getInputFromDate[0];
-
-      let inityear = this.getToday.year;
-      let initmonth =
-        this.getToday.month <= 9
-          ? '0' + this.getToday.month
-          : this.getToday.month;
-      let initday =
-        this.getToday.day <= 9 ? '0' + this.getToday.day : this.getToday.day;
-      let initfinalDate = initday + '/' + initmonth + '/' + inityear;
-      this.initToday = initfinalDate;
-  
+  filterLast7days(){
+      var date = new Date();
+      date.setDate(date.getDate() - 7);
+      var dateString = date.toISOString().split('T')[0];
+      let getInputFromDate:any = dateString.split('-');
+      let finalInputFromDate = getInputFromDate[2] + "/" + getInputFromDate[1] + "/" + getInputFromDate[0];
       this.customer.setFromDate(finalInputFromDate);
       this.customer.setToDate(this.initToday);
-
-      this.dashboardservice.setFromDate(finalInputFromDate);
-      this.dashboardservice.setToDate(this.initToday);
       window.location.reload();
   }
+
+  filterLast30days(){
+    var date = new Date();
+    date.setDate(date.getDate() - 30);
+    var dateString = date.toISOString().split('T')[0];
+    let getInputFromDate:any = dateString.split('-');
+    let finalInputFromDate = getInputFromDate[2] + "/" + getInputFromDate[1] + "/" + getInputFromDate[0];
+    this.customer.setFromDate(finalInputFromDate);
+    this.customer.setToDate(this.initToday);
+    window.location.reload();
+}
+
+filterByYear() {
+  var date = new Date();
+  date.setFullYear(date.getFullYear() - 1);  // subtract one year instead of 30 days
+  var dateString = date.toISOString().split('T')[0];
+  let getInputFromDate: any = dateString.split('-');
+  let finalInputFromDate = getInputFromDate[2] + "/" + getInputFromDate[1] + "/" + getInputFromDate[0];
+  this.customer.setFromDate(finalInputFromDate);
+  this.customer.setToDate(this.initToday);
+  window.location.reload();
+}
+
+filterLastMonth() {
+  let date = new Date();
+  date.setMonth(date.getMonth() - 1);
+  let firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 2);
+  let lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+  let fromDateString = firstDayOfMonth.toISOString().split('T')[0];
+  let toDateString = lastDayOfMonth.toISOString().split('T')[0];
+
+  let getInputFromDate: any = fromDateString.split('-');
+  let finalInputFromDate =
+    getInputFromDate[2] +
+    '/' +
+    getInputFromDate[1] +
+    '/' +
+    getInputFromDate[0];
+
+    let getInputToDate: any = toDateString.split('-');
+    let finalInputToDate =
+      getInputToDate[2] +
+      '/' +
+      getInputToDate[1] +
+      '/' +
+      getInputToDate[0];
+  this.customer.setFromDate(finalInputFromDate);
+  this.customer.setToDate(finalInputToDate);
+  window.location.reload();
+}
+
+filterMonthToDate() {
+  let currentDate = new Date();
+  let firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 2);
+  let fromDateString = firstDayOfMonth.toISOString().split('T')[0];
+  let toDateString = currentDate.toISOString().split('T')[0];
+
+  let getInputFromDate: any = fromDateString.split('-');
+  let finalInputFromDate =
+    getInputFromDate[2] +
+    '/' +
+    getInputFromDate[1] +
+    '/' +
+    getInputFromDate[0];
+
+    this.customer.setFromDate(finalInputFromDate);
+    this.customer.setToDate(this.initToday);
+    window.location.reload();
+}
 
 }

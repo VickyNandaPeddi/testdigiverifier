@@ -1,4 +1,4 @@
-import { Component, NgZone, AfterViewInit, OnDestroy, OnInit } from '@angular/core';
+import { Component, NgZone, AfterViewInit, OnDestroy, OnInit, Injectable } from '@angular/core';
 import * as am4core from "@amcharts/amcharts4/core";
 import { CustomerService } from '../../services/customer.service';
 import * as am4charts from "@amcharts/amcharts4/charts";
@@ -7,8 +7,15 @@ import { OrgadminDashboardService } from 'src/app/services/orgadmin-dashboard.se
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import * as  _ from 'lodash';
+import { AuthenticationService } from 'src/app/services/authentication.service';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { FormGroup, FormControl, FormBuilder, Validators } from '@angular/forms';
+
 am4core.useTheme(am4themes_animated);
 
+@Injectable({
+  providedIn: 'root',
+})
 @Component({
   selector: 'app-report-delivery-details',
   templateUrl: './report-delivery-details.component.html',
@@ -17,49 +24,81 @@ am4core.useTheme(am4themes_animated);
 export class ReportDeliveryDetailsComponent implements OnInit {
   private chart: am4charts.XYChart | undefined;
   getReportDeliveryStatCodes: any;
+  searchText: string = '';
   CharReportDelivery: any=[];
   CharReportDeliveryData: any=[];
   containerStat:boolean = false;
   stat_linkAdminApproval:boolean = false;
   stat_linkCandidateReport:boolean = false;
-  stat_linkConventional:boolean = false;
   finalreport:boolean=false;
+  interimreport:boolean=false;
   startdownload:boolean=false;
+  Action:boolean=false;
   startpredownload:boolean=false;
   isCBadmin:boolean = false;
-  constructor(private zone: NgZone, private orgadmin:OrgadminDashboardService,private customers:CustomerService,
-    private router: Router) {
+  getCandidate: any=[];
+  currentPage = 1;
+  pageSize: number = 10;
+  currentPageIndex: number = 0;
+  updateCandidate = new FormGroup({
+    applicantId: new FormControl(''),
+    candidateName: new FormControl('', Validators.required),
+    createdByUserFirstName: new FormControl('', Validators.required),
+    candidateCode: new FormControl('', Validators.required),
+    contactNumber:  new FormControl('', [Validators.minLength(10), Validators.maxLength(10), Validators.pattern('[6-9]\\d{9}')]),
+    emailId: new FormControl('', [Validators.required,Validators.email])
+  });
+  constructor(private zone: NgZone, private orgadmin:OrgadminDashboardService,private customers:CustomerService,private modalService: NgbModal,
+    private router: Router,public authService: AuthenticationService) {
     this.getReportDeliveryStatCodes = this.orgadmin.getReportDeliveryStatCode();
     if(this.getReportDeliveryStatCodes){
-      var userId:any = localStorage.getItem('userId');
+      var userId:any = this.authService.getuserId();
       var fromDate:any = localStorage.getItem('dbFromDate');
       var toDate:any = localStorage.getItem('dbToDate');
       let filterData = {
         'userId': userId,
         'fromDate': fromDate,
         'toDate': toDate,
-        'status': this.getReportDeliveryStatCodes
+        'status': this.getReportDeliveryStatCodes,
+        //adding below parameter to get the backend pagination list
+        'pageNumber':this.currentPageIndex
       }
       this.orgadmin.getChartDetails(filterData).subscribe((data: any)=>{
         this.CharReportDelivery=data.data.candidateDtoList;
-        console.log("Before : ", this.CharReportDelivery)
+        // this.CharReportDelivery=data.data.candidateDtoList.reverse();
+
         for(let i=0; i<this.CharReportDelivery.length; i++) {
           // let index = _.findIndex(this.CharReportDelivery[i].contentDTOList, {contentSubCategory: 'PRE_APPROVAL'});
           // this.CharReportDelivery[i].pre_approval_content_id = (index != -1) ? this.CharReportDelivery[i].contentDTOList[index].contentId : -1;
-          // console.log('Lavanyapre',index)
+
           let final = this.CharReportDelivery[i].contentDTOList;
+          let interim = this.CharReportDelivery[i].candidateStatusName;
+
           for (let i=0; i<final.length; i++){
-            if(final[i].contentSubCategory=="FINAL"){
+            if(final[i].contentSubCategory=="FINAL" && filterData.status == 'FINALREPORT'){
               this.finalreport = true
-              console.log('Lavanyafinal',final[i].contentSubCategory)
             }
+          }
+
+          if(interim == 'Interim Report' && filterData.status == 'INTERIMREPORT') {
+            this.interimreport = true;
           }
 
         }
 
+        // this.CharReportDelivery.sort((a: any, b: any) => {
+        //   const dateA = new Date(a.lastUploadedOn);
+        //   const dateB = new Date(b.lastUploadedOn);
 
+        //   return dateB.getTime() - dateA.getTime();
+        // });
+
+        console.warn("fiterData:::",this.CharReportDelivery);
         console.log("After : ", this.CharReportDelivery)
         //console.log(data);
+        const startIndex = this.currentPageIndex * this.pageSize;
+        const endIndex = startIndex + this.pageSize;
+        return this.CharReportDelivery.slice(startIndex, endIndex);
       });
 
     }
@@ -97,7 +136,7 @@ export class ReportDeliveryDetailsComponent implements OnInit {
       chart.radius = am4core.percent(95);
       chart.paddingRight = 0;
 
-      var userId:any = localStorage.getItem('userId');
+      var userId:any = this.authService.getuserId();
       var fromDate:any = localStorage.getItem('dbFromDate');
       var toDate:any = localStorage.getItem('dbToDate');
       let filterData = {
@@ -111,10 +150,14 @@ export class ReportDeliveryDetailsComponent implements OnInit {
         //console.log(this.CharReportDeliveryData);
         let data = [];
         for (let i = 0; i < this.CharReportDeliveryData.length; i++) {
+          // let obj={};
+          // obj=this.CharReportDeliveryData[i].statusName;
           data.push({name: this.CharReportDeliveryData[i].statusName, value: this.CharReportDeliveryData[i].count, statcode: this.CharReportDeliveryData[i].statusCode });
         }
         chart.data = data;
       });
+
+
 
 // Add and configure Series
 let pieSeries = chart.series.push(new am4charts.PieSeries());
@@ -175,26 +218,62 @@ ngOnDestroy() {
   });
 }
 
+performSearch(){
+  console.log('Search Text:', this.searchText);
+  const username = this.authService.getuserName();
+  const userID = this.authService.getuserId();
+  const orgId = this.authService.getOrgID();
+  const role = this.authService.getRoles();
+  const userRoleName = this.authService.getroleName();
+  console.log("ROLE:::",role);
+  console.log("roleName:::",userRoleName);
+  console.warn("username:::",username);
+  console.warn("ORG_ID::",orgId);
+  const searchData = {
+    userSearchInput: this.searchText,
+    agentName: username,
+    organisationId:orgId,
+    roleName:userRoleName,
+    userId:userID
+
+  };
+  console.log('Search Data:', searchData);
+
+  this.orgadmin.getAllSearchData(searchData).subscribe((data:any)=>{
+    this.CharReportDelivery=data.data.candidateDtoList;
+    console.warn("data",data);
+    console.warn("chartreport::>>>",this.CharReportDelivery);
+  })
+
+}
+
   ngOnInit(): void {
-    const isCBadminVal = localStorage.getItem('roles');
+    const isCBadminVal = this.authService.getRoles();
     if(this.getReportDeliveryStatCodes){
       if(this.getReportDeliveryStatCodes === "PENDINGAPPROVAL"){
-        $(".dbtabheading").text("QC Pending");
+        $(".dbtabheading").text("Pre offer Report");
         this.stat_linkAdminApproval = true;
         this.stat_linkCandidateReport = false;
+        this.Action = true;
+        this.finalreport = false;
       }else if(this.getReportDeliveryStatCodes === "INTERIMREPORT"){
         $(".dbtabheading").text("Interim Report");
         this.stat_linkAdminApproval = false;
         this.stat_linkCandidateReport = true;
+        this.Action = true;
+        this.finalreport = false;
       }else if(this.getReportDeliveryStatCodes === "FINALREPORT"){
         $(".dbtabheading").text("Final Report");
         this.stat_linkAdminApproval = false;
-        this.stat_linkCandidateReport = true;
+        this.stat_linkCandidateReport = false;
+        this.Action = false;
+        this.finalreport = true;
       }else if(this.getReportDeliveryStatCodes === "PROCESSDECLINED"){
         $(".dbtabheading").text("Process Declined");
         this.stat_linkAdminApproval = false;
         this.stat_linkCandidateReport = false;
-
+        this.Action = false;
+        this.finalreport = false;
       }
       this.containerStat = true;
       //isCBadmin required for drilldown dashboard at Superadmin
@@ -206,7 +285,6 @@ ngOnDestroy() {
       }
     }
   }
-
 
   linkAdminApproval(candidateCode:any){
     const billUrl = 'admin/cReportApproval/'+[candidateCode];
@@ -226,6 +304,7 @@ ngOnDestroy() {
       this.startpredownload=true
 
     }
+
     if(this.startpredownload==true){
       if(candidate.pre_approval_content_id != -1) {
         console.log(candidate,"-----if--------");
@@ -235,17 +314,45 @@ ngOnDestroy() {
         });
       }
     }
+
+    //this block added if pre offer generation failed and we want to regenerate it from eye button
+    if(candidate.pre_approval_content_id == -1) {
+
+      this.startpredownload==true;
+      this.orgadmin.getPreOfferRegenerationCall(candidate.candidateCode).subscribe((url: any)=>{
+        if(url.outcome){
+
+          let pre_approval_content_id= url.data;
+          console.log(pre_approval_content_id,"Content Id for ::");
+          this.orgadmin.getSignedURLForContent(pre_approval_content_id).subscribe((url: any)=>{
+
+            window.open(url.data, '_blank');
+          });
+        }
+
+      });
+    }
   }
 
-  downloadFinalReport(candidate: any) {
-    console.log("final");
-    for(let i=0; i<this.CharReportDelivery.length; i++) {
-      let index = _.findIndex(this.CharReportDelivery[i].contentDTOList, {contentSubCategory: 'FINAL'});
-      this.CharReportDelivery[i].pre_approval_content_id = (index != -1) ? this.CharReportDelivery[i].contentDTOList[index].contentId : -1;
-      console.log('Lavanyafinal',index)
-      this.startdownload=true
+  downloadFinalReport(candidate: any, reportType: any) {
+    if(reportType == 'FINAL') {
+      for(let i=0; i<this.CharReportDelivery.length; i++) {
+        let index = _.findIndex(this.CharReportDelivery[i].contentDTOList, {contentSubCategory: 'FINAL'});
+        this.CharReportDelivery[i].pre_approval_content_id = (index != -1) ? this.CharReportDelivery[i].contentDTOList[index].contentId : -1;
+        console.log('Lavanyafinal',index)
+        this.startdownload=true
 
+      }
+    } else if(reportType == 'INTERIM') {
+      for(let i=0; i<this.CharReportDelivery.length; i++) {
+        let index = this.CharReportDelivery[i].contentDTOList.findIndex((item: any)=> item.path.includes('INTERIM.pdf'));
+        this.CharReportDelivery[i].pre_approval_content_id = (index != -1) ? this.CharReportDelivery[i].contentDTOList[index].contentId : -1;
+        console.log('interim',index)
+        this.startdownload=true
+
+      }
     }
+
     if(this.startdownload==true){
       if(candidate.pre_approval_content_id != -1) {
         console.log(candidate,"-----if--------");
@@ -257,4 +364,233 @@ ngOnDestroy() {
     }
   }
 
+  downloadInterimReport(candidate: any,reportStatus: any) {
+    // let interimContentDto = candidate.contentDTOList.find((dto: any) => dto.path.includes('INTERIM.pdf'));
+
+    if(candidate.candidateCode) {
+      this.orgadmin.getPreSignedUrlByCandidateCode(candidate.candidateCode,reportStatus).subscribe((url: any)=>{
+        window.open(url.data, '_blank');
+      });
+    }
+  }
+  CharReportDeliverypagination(): any[] {
+    const filteredItems = this.CharReportDelivery.filter((item: any) => this.searchFilter(item));
+    const startIndex = this.currentPageIndex * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return filteredItems.slice(startIndex, endIndex);
+  }
+
+  goToNextPage(): void {
+        if (this.currentPageIndex < this.totalPages - 1) {
+        this.currentPageIndex++;
+        }
+    //adding below lines to call the next page records
+        if(this.getReportDeliveryStatCodes){
+          var userId:any = this.authService.getuserId();
+          var fromDate:any = localStorage.getItem('dbFromDate');
+          var toDate:any = localStorage.getItem('dbToDate');
+          let filterData = {
+            'userId': userId,
+            'fromDate': fromDate,
+            'toDate': toDate,
+            'status': this.getReportDeliveryStatCodes,
+            //adding below parameter to get the backend pagination list
+            'pageNumber':this.currentPageIndex
+          }
+          this.orgadmin.getChartDetails(filterData).subscribe((data: any)=>{
+            this.CharReportDelivery=data.data.candidateDtoList;
+            // this.CharReportDelivery=data.data.candidateDtoList.reverse();
+
+            for(let i=0; i<this.CharReportDelivery.length; i++) {
+
+              let final = this.CharReportDelivery[i].contentDTOList;
+              let interim = this.CharReportDelivery[i].candidateStatusName;
+
+              for (let i=0; i<final.length; i++){
+                if(final[i].contentSubCategory=="FINAL" && filterData.status == 'FINALREPORT'){
+                  this.finalreport = true
+                }
+              }
+
+              if(interim == 'Interim Report' && filterData.status == 'INTERIMREPORT') {
+                this.interimreport = true;
+              }
+
+            }
+
+            // this.CharReportDelivery.sort((a: any, b: any) => {
+            //   const dateA = new Date(a.lastUploadedOn);
+            //   const dateB = new Date(b.lastUploadedOn);
+
+            //   return dateB.getTime() - dateA.getTime();
+            // });
+
+            console.warn("fiterData:::",this.CharReportDelivery);
+            console.log("After : ", this.CharReportDelivery)
+            //console.log(data);
+            const startIndex = this.currentPageIndex * this.pageSize;
+            const endIndex = startIndex + this.pageSize;
+            return this.CharReportDelivery.slice(startIndex, endIndex);
+          });
+
+        }
+    }
+
+  goToPrevPage(): void {
+    // this.idvalue=idvalue;
+        if (this.currentPageIndex > 0) {
+        this.currentPageIndex--;
+        }
+        //adding below lines to call the previous page records
+        if(this.getReportDeliveryStatCodes){
+          var userId:any = this.authService.getuserId();
+          var fromDate:any = localStorage.getItem('dbFromDate');
+          var toDate:any = localStorage.getItem('dbToDate');
+          let filterData = {
+            'userId': userId,
+            'fromDate': fromDate,
+            'toDate': toDate,
+            'status': this.getReportDeliveryStatCodes,
+            //adding below parameter to get the backend pagination list
+            'pageNumber':this.currentPageIndex
+          }
+          this.orgadmin.getChartDetails(filterData).subscribe((data: any)=>{
+            this.CharReportDelivery=data.data.candidateDtoList;
+            // this.CharReportDelivery=data.data.candidateDtoList.reverse();
+
+            for(let i=0; i<this.CharReportDelivery.length; i++) {
+
+              let final = this.CharReportDelivery[i].contentDTOList;
+              let interim = this.CharReportDelivery[i].candidateStatusName;
+
+              for (let i=0; i<final.length; i++){
+                if(final[i].contentSubCategory=="FINAL" && filterData.status == 'FINALREPORT'){
+                  this.finalreport = true
+                }
+              }
+
+              if(interim == 'Interim Report' && filterData.status == 'INTERIMREPORT') {
+                this.interimreport = true;
+              }
+
+            }
+
+            // this.CharReportDelivery.sort((a: any, b: any) => {
+            //   const dateA = new Date(a.lastUploadedOn);
+            //   const dateB = new Date(b.lastUploadedOn);
+
+            //   return dateB.getTime() - dateA.getTime();
+            // });
+
+            console.warn("fiterData:::",this.CharReportDelivery);
+            console.log("After : ", this.CharReportDelivery)
+            //console.log(data);
+            const startIndex = this.currentPageIndex * this.pageSize;
+            const endIndex = startIndex + this.pageSize;
+            return this.CharReportDelivery.slice(startIndex, endIndex);
+          });
+
+        }
+
+    }
+
+  // get totalPages(): number {
+  //   const filteredItems = this.CharReportDelivery.filter((item: any) => this.searchFilter(item));
+  //   return Math.ceil(filteredItems.length / this.pageSize);
+  //   }
+
+  get totalPages(): number {
+    for (let i = 0; i < this.CharReportDeliveryData.length; i++) {
+      if(this.CharReportDeliveryData[i].statusCode==this.getReportDeliveryStatCodes){
+        console.log("Total PAges::{}",Math.ceil(this.CharReportDeliveryData[i].count / this.pageSize));
+        return Math.ceil(this.CharReportDeliveryData[i].count / this.pageSize);
+      }
+    }
+    return 0;
+  }
+
+    searchFilter(item: any): boolean {
+      const searchText = this.searchText.toLowerCase();
+      const candidateName = item.candidateName.toLowerCase();
+      const emailId = item.emailId.toLowerCase();
+      const contactNumber = item.contactNumber.toLowerCase();
+      const applicantId = item.applicantId.toLowerCase();
+
+      return candidateName.includes(searchText.toLowerCase()) ||
+             emailId.includes(searchText.toLowerCase()) ||
+             contactNumber.includes(searchText.toLowerCase()) ||
+             applicantId.includes(searchText.toLowerCase());
+  }
+
+  downloadFinalReportDirectFromQC(candidate: any,reportStatus: any) {
+
+    if(candidate.candidateCode) {
+      this.orgadmin.getPreSignedUrlByCandidateCodeForFinal(candidate.candidateCode,reportStatus).subscribe((url: any)=>{
+        window.open(url.data, '_blank');
+      });
+    }
+  }
+
+  activeInactive(referenceNo:any){
+    return this.orgadmin.putAgentStat(referenceNo).subscribe((result:any)=>{
+      if(result.outcome === true){
+        Swal.fire({
+          title: result.message,
+          icon: 'success'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.location.reload();
+          }
+        });
+      }else{
+        Swal.fire({
+          title: result.message,
+          icon: 'warning'
+        })
+      }
+  });
+  }
+  openModal(modalData:any, userId:any){
+    this.modalService.open(modalData, {
+     centered: true,
+     backdrop: 'static'
+    });
+    this.orgadmin.getCandidateDetails(userId).subscribe((result: any)=>{
+     this.getCandidate=result.data;
+     this.updateCandidate.patchValue({
+       candidateName: this.getCandidate.candidateName,
+       applicantId: this.getCandidate.applicantId,
+       createdByUserFirstName: this.getCandidate.createdByUserFirstName,
+       candidateCode: this.getCandidate.candidateCode,
+       contactNumber: this.getCandidate.contactNumber,
+       emailId: this.getCandidate.emailId
+      });
+   });
+ }
+ onSubmit(updateCandidate:FormGroup) {
+  if(this.updateCandidate.valid){
+   this.orgadmin.putCandidateData(this.updateCandidate.value).subscribe((result:any)=>{
+      if(result.outcome === true){
+        Swal.fire({
+          title: result.message,
+          icon: 'success'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.location.reload();
+          }
+        });
+      }else{
+        Swal.fire({
+          title: result.message,
+          icon: 'warning'
+        })
+      }
+});
+}else{
+  Swal.fire({
+    title: "Please enter the required information",
+    icon: 'warning'
+  })
+}
+}
 }

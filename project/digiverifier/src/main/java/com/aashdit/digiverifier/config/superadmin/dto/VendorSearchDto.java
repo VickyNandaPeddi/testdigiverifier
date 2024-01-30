@@ -2,6 +2,8 @@ package com.aashdit.digiverifier.config.superadmin.dto;
 
 import java.util.List;
 
+import com.aashdit.digiverifier.config.admin.dto.vendorChecksDto;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,8 +11,10 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+
 public class VendorSearchDto {
-	private String fromDate;
+
+private String fromDate;
 	
 	private String toDate;
 	
@@ -22,7 +26,7 @@ public class VendorSearchDto {
 	
 	private String statusCode;
 	
-	private List<VendorChecksDto> candidateDetailsDto;
+	private List<vendorChecksDto> candidateDetailsDto;
 	
 	private String organizationName;
  

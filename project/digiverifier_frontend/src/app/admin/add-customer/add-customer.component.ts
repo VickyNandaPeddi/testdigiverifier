@@ -32,6 +32,7 @@ export class AddCustomerComponent implements OnInit {
     accountPocEmail: new FormControl('', Validators.email),
     organizationWebsite: new FormControl(),
     organizationEmailId: new FormControl('', [Validators.required,Validators.email]),
+    callBackUrl: new FormControl(),
     emailConfig:new FormControl(),
     emailTemplate:new FormControl(),
     daysToPurge:new FormControl(),

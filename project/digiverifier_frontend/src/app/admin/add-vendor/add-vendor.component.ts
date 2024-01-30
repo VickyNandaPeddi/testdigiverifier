@@ -45,6 +45,12 @@ export class AddVendorComponent implements OnInit {
 			organizationId: this.orgID
 		});
 	}
+
+  addChecksForm  = new FormGroup({
+    sourceName : new FormControl('',Validators.required),
+    sourceCode : new FormControl('',Validators.required)
+  })
+
   constructor(private orgadmin:OrgadminService, public authService: AuthenticationService, private modalService: NgbModal,private router: Router) {
     this.orgID = this.authService.getOrgID();
     this.orgadmin.getOrgVendor(this.orgID).subscribe((data: any)=>{
@@ -60,11 +66,11 @@ export class AddVendorComponent implements OnInit {
       this.getSupervisor=supervisorList.data;
       console.log(this.getSupervisor);
     });
-    
+
    }
 
   ngOnInit(): void {
-    this.orgadmin.getRolePerMissionCodes(localStorage.getItem('roles')).subscribe(
+    this.orgadmin.getRolePerMissionCodes(this.authService.getRoles()).subscribe(
       (result:any) => {
       this.getRolePerMissionCodes = result.data;
         if(this.getRolePerMissionCodes){
@@ -85,24 +91,24 @@ export class AddVendorComponent implements OnInit {
               $("#inactiveCust_p"+index).removeClass('d-none');
              }
 
-            
+
           }
 
         }
     });
-    
+
   }
 
 
   onSubmit() {
     return this.orgadmin.saveOrgusers(this.addOrgUser.value).subscribe((data:any)=>{
-     
+
       if(data.outcome === true){
         Swal.fire({
           title: data.message,
           icon: 'success'
         })
-       
+
         .then((data) => {
           if (data.isConfirmed) {
             window.location.reload();
@@ -113,9 +119,9 @@ export class AddVendorComponent implements OnInit {
           title: data.message,
           icon: 'warning'
         })
-      } 
+      }
     });
-    
+
   }
 
 
@@ -123,9 +129,9 @@ addvendor() {
   console.log("---------------inside-----btn")
   const billUrl = 'admin/vendormgmt';
   this.router.navigate([billUrl]);
-    
+
   }
-  
+
   private getDismissReason(reason: any): string {
     if (reason === ModalDismissReasons.ESC) {
       return 'by pressing ESC';
@@ -158,8 +164,8 @@ addvendor() {
           title: data.message,
           icon: 'warning'
         })
-      } 
-       
+      }
+
      })
   }
   selectroleId(event:any){
@@ -178,7 +184,27 @@ addvendor() {
 
     const billUrl = 'admin/vendormgmt/'+userId;
     this.router.navigate([billUrl]);
-    
+
   }
+
+  triggerModal(content: any) {
+    this.modalService.open(content).result.then((res) => {
+      this.closeModal = `Closed with: ${res}`;
+    }, (res) => {
+      this.closeModal = `Dismissed ${this.getDismissReason(res)}`;
+    });
+  }
+
+
+  submitAddCheck(){
+
+  }
+
+  addChecks() {
+    console.log("---------------inside-----btn")
+    const billUrl = 'admin/addCheck';
+    this.router.navigate([billUrl]);
+
+    }
 
 }

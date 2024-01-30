@@ -12,22 +12,6 @@
     <div class="row">
         <div class="col-md-12">
             <div class="card" style="z-index: 1;">
-                <div class="card-body" style="padding: 15px 20px 10px;">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <button type="button" (click)="filterToday()" 
-                            class="btn btn-sm btn-primary btn-block">Today</button>
-                        </div>
-                        <div class="col-md-3">
-                            <button type="button" (click)="filterLastMonth()"
-                            class="btn btn-sm btn-primary btn-block">Last Month</button>
-                        </div>
-                        <div class="col-md-3">
-                            <button type="button" (click)="filterMonthToDate()"
-                            class="btn btn-sm btn-primary btn-block">MTD</button>
-                        </div>
-                    </div>
-                </div>
                 <div class="card-body" style="padding: 8px 20px 5px;">
                     <div class="row">
                         <div class="col-md-3">
@@ -80,14 +64,8 @@
             <div class="card">
                 <div class="card-header">
                     <h4 class="card-title">Vendor Utilization Report
-                        <!-- <button   type="button" class="btn btn-sm btn-primary float-right" (click)="exportexcel()">
+                        <button   type="button" class="btn btn-sm btn-primary float-right" (click)="exportexcel()">
                             Export
-                        </button> -->
-                        <button  *ngIf="hideLoadingBtn" type="button" class="btn btn-sm btn-primary float-right" (click)="exportexcel()">
-                            Export
-                        </button>
-                        <button  *ngIf="!hideLoadingBtn" type="button" class="btn btn-sm btn-primary float-right" aria-readonly="true">
-                            Loading...
                         </button>
                     </h4>
                 </div>
@@ -107,14 +85,13 @@
                                     <thead>
                                         <tr>
                                             <th>SI#</th>
-                                            <th>Check Name</th>
+                                            <th>Company Name</th>
                                             <th>Clear</th>
                                             <th>In Progress</th>
                                             <th>In Sufficiency</th>
                                             <th>Major Discrepancy</th>
                                             <th>Minor Discrepancy</th>
                                             <th>Unable To Verify</th>
-                                            <th>New Uploads</th>
                                             <!-- <th>Total Agents</th> -->
                                         </tr>
                                     </thead>
@@ -125,7 +102,6 @@
                                             <td><span (click)="getData(item.id, item.newuploadStatusCode)">{{ item.newuploadcount }}</span></td>
                                             <td><span (click)="getData(item.id, item.reinviteStatusCode)">{{ item.reinvitecount }}</span></td>
                                             <td><span (click)="getData(item.id, item.finalReportStatusCode)">{{ item.finalreportCount }}</span></td>
-                                            <td><span (click)="getData(item.id, item.invitationExpiredStatusCode)">{{ item.interimReportCount}}</span></td>
                                             <td><span (click)="getData(item.id, item.pendingStatusCode)">{{ item.pendingCount}}</span></td>
                                             <td><span (click)="getData(item.id, item.processDeclinedStatusCode)">{{ item.processDeclinedCount}}</span></td>
                                             <td><span (click)="getData(item.id, item.invitationExpiredStatusCode)">{{ item.invitationExpireCount}}</span></td>

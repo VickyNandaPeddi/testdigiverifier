@@ -1,8 +1,10 @@
-
+<div class="card-body" style="padding: 5px;" class="float-right">
+    <input type="text" placeholder="search" class="float-right" [(ngModel)]="searchText" *ngIf="containerStat"  (keyup.enter)="performSearch()">
+</div>
                         <div class="table-responsive" *ngIf="containerStat">
                             <table class="table table-bordered" id="tbl-uploaddetails">
                                 <thead>
-                                    <th>S.No</th>
+                                    <th>SI#</th>
                                     <th>Agent Name</th>
                                     <th>Candidate Name</th>
                                     <th>Email ID</th>
@@ -15,7 +17,7 @@
 
                                 </thead>
                                 <tbody>
-                                    <tr *ngFor="let item of ChartDataListing; let i=index">
+                                    <tr *ngFor="let item of ChartDataListing; let i=index" [hidden]="!searchFilter(item)">
                                         <td>{{i+1}}</td>
                                         <td>{{ item.createdByUserFirstName }} {{ item.createdByUserLastName }}</td>
                                         <td>{{item.candidateName}}</td>
@@ -23,19 +25,31 @@
                                         <td>{{item.contactNumber}}</td>
                                         <td>{{item.applicantId}}</td>
                                         <td>{{item.createdOn}}</td>
-                                        <td>{{item.candidateStatusName}}</td>
+                                        <td>{{item.candidateStatusName}} 
+                                            <span>
+                                                <a type="button" *ngIf="item.candidateStatusName === 'QC Pending' || item.candidateStatusName === 'Interim Report'  || item.candidateStatusName === 'Final Report'" (click)="downloadReports(item, item.candidateStatusName)" style="color: blue;">
+                                                    {{item.candidateStatusName === 'QC Pending' ? (item.preOfferVerificationColorCode ? item.preOfferVerificationColorCode.colorCode : ' ') : (item.candidateStatusName === 'Interim Report' ? (item.interimVerificationColorCode ? item.interimVerificationColorCode.colorCode : ' ') : (item.candidateStatusName === 'Final Report' ? (item.finalVerificationColorCode ? item.finalVerificationColorCode.colorCode : ' ') : ' '))}}
+                                                </a>
+                                            </span>
+                                        </td>
                                         <td *ngIf="stat_INVITATIONSENT">
                                             <div style="min-width: 80px;text-align: center;">
-                                                <button type="button"  (click)="openModal(modalData, item.candidateCode)" class="btn btn-warning btn-sm" *ngIf="EDITCANDIDATE_stat || authService.roleMatch(['ROLE_ADMIN'])" title="Edit"><i class="cellRenderFramework:(params)=>" class="fas fa-edit"></i></button>
-                                                <button type="button" *ngIf="stat_NEWUPLOAD" (click)="activeInactive(item.candidateCode)" class="btn btn-danger btn-sm" title="Cancel Candidate"><i class="fas fa-times"></i></button>
+                                                <!-- <button *ngIf="item.candidateStatusName === 'Interim Report' || item.candidateStatusName === 'QC Pending'" type="button" (click)="linkAdminApproval(item.candidateCode)" class="btn btn-sm btn-warning" title="Edit"><i class="fas fa-edit"></i></button> -->
+
+                                                <button type="button" *ngIf="item.candidateStatusName === 'QC Pending' || item.candidateStatusName === 'Interim Report'" (click)="linkAdminApproval(item.candidateCode)" class="btn btn-warning btn-sm" title="Edit"> <i class="fa fa-edit"></i></button>
+                                                <button type="button" *ngIf="item.candidateStatusName === 'Invitation Sent' || item.candidateStatusName === 'Digilocker Completed' || item.candidateStatusName === 'ITR Completed' || item.candidateStatusName === 'EPFO Completed' || item.candidateStatusName === 'EPFO Skipped' || item.candidateStatusName === 'CAF Pending' || item.candidateStatusName === 'Invitation Expired' || item.candidateStatusName === 'Invalid Upload' || item.candidateStatusName === 'Relative Address Completed' || item.candidateStatusName === 'Re Invite'" (click)="openModal(modalData, item.candidateCode)" class="btn btn-warning btn-sm"  title="Edit"><i class="fa fa-edit"></i></button> <!--*ngIf="EDITCANDIDATE_stat || authService.roleMatch(['ROLE_ADMIN'])"-->
+                                                <!-- <button type="button" *ngIf="stat_linkAdminApproval" (click)="linkAdminApproval(item.candidateCode)" class="btn btn-sm btn-warning" title="View Report"><i class="fas fa-eye"></i></button> -->
+
+                                                <!-- <button type="button" *ngIf="stat_NEWUPLOAD" (click)="activeInactive(item.candidateCode)" class="btn btn-danger btn-sm" title="Cancel Candidate"><i class="fas fa-times"></i></button> -->
+                                                <button type="button" *ngIf="item.candidateStatusName === 'Invitation Sent' || item.candidateStatusName === 'Digilocker Completed' || item.candidateStatusName === 'ITR Completed' || item.candidateStatusName === 'EPFO Completed' || item.candidateStatusName === 'EPFO Skipped' || item.candidateStatusName === 'CAF Pending' || item.candidateStatusName === 'Invitation Expired' || item.candidateStatusName === 'Invalid Upload' || item.candidateStatusName === 'Relative Address Completed' || item.candidateStatusName === 'Re Invite'" (click)="activeInactive(item.candidateCode)" class="btn btn-danger btn-sm" title="Decline"><i class="fas fa-times"></i></button>
+
                                             </div>
                                         </td>
-                                        <td *ngIf="stat_INVITATIONSENT"><input type="checkbox" id="{{item.candidateCode}}" value="{{item.candidateCode}}" class="childCheck" (change)="childCheck($event)"></td>
+                                        <td *ngIf="stat_INVITATIONSENT"><input type="checkbox" *ngIf="item.candidateStatusName === 'Invitation Sent' || item.candidateStatusName === 'Digilocker Completed' || item.candidateStatusName === 'ITR Completed' || item.candidateStatusName === 'EPFO Completed' || item.candidateStatusName === 'EPFO Skipped' || item.candidateStatusName === 'CAF Pending' || item.candidateStatusName === 'Invitation Expired' || item.candidateStatusName === 'Invalid Upload' || item.candidateStatusName === 'Relative Address Completed' || item.candidateStatusName === 'Re Invite'" id="{{item.candidateCode}}" value="{{item.candidateCode}}" class="childCheck" (change)="childCheck($event)"></td>
 
                                     </tr>
                                 </tbody>
-                            </table>
-                        </div>
+                            </table>                        
                         <form [formGroup]="formSendInvitation" *ngIf="containerStat">
                             <input type="hidden" formControlName="candidateReferenceNo">
                             <input type="hidden" formControlName="statuscode">
@@ -45,8 +59,14 @@
                                     <button type="submit" *ngIf="stat_btn_ReInvite" (click)="reInvite()" class="btn btn-sm btn-success ">Re-Invite</button>
                                 </div>
                             </div>
-
+                            
                         </form>
+                            <div class="pagination">
+                                <button [disabled]="currentPageIndex == 0" (click)="goToPrevPage()">Previous</button>
+                                <span>Page {{currentPageIndex}} of {{totalPages}}</span>
+                                <button [disabled]="currentPageIndex == totalPages - 1" (click)="goToNextPage()">Next</button>
+                            </div>
+                        </div>     
                         <ng-template #modalData let-modal>
                             <div class="modal-header">
                               <h4 class="modal-title" id="modal-basic-title">Update Candidate</h4>
@@ -85,12 +105,14 @@
                                             <div class="form-group">
                                                 <label for="" class="">Contact Number</label>
                                                 <input type="text" class="form-control form-control-sm" minlength="10" maxlength="10" id="" formControlName="contactNumber">
+                                                <div style="color: red;" *ngIf="showContactNumberError && updateCandidate.get('contactNumber')?.value.length !== 10">Invalid Contact number</div>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="form-group">
                                                 <label for="" class="required">Email ID</label>
                                                 <input type="text" class="form-control form-control-sm" id="" formControlName="emailId">
+                                                <div style="color: red;" *ngIf="showEmailIdError && updateCandidate.get('emailId')?.invalid">Email is Invalid</div>
                                             </div>
                                         </div>
                                     </div>

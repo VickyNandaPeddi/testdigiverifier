@@ -22,7 +22,10 @@ export class AuthInterceptor implements HttpInterceptor {
     if (req.headers.get("No-Auth") === 'True'){
       return next.handle(req.clone());
     }
-    
+    const secureReq = req.clone({
+      headers: req.headers
+        .set('Content-Security-Policy', "default-src 'self';")
+    });
     return next.handle(req).pipe(
       catchError(
         (err:HttpErrorResponse)=>{
